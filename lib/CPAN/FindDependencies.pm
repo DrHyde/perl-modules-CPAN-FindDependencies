@@ -117,7 +117,7 @@ sub _finddeps_uncached {
 
     $distname =~ s!(^.*/|(\.tar\.gz|\.zip)$)!!g;
 
-    return [] if($distsvisited->{$distname} || $module eq 'perl');
+    return [] if($distsvisited->{$distname} || $module eq 'perl' || $distname =~ /^perl/);
     $distsvisited->{$distname} = 1;
 
     return [
