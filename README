@@ -1,6 +1,6 @@
-This module provides tools to find a module's dependencies (and
-their dependencies, and so on) without having to download the
-modules in their entirety.
+This module provides tools to find a module's dependencies (and their
+dependencies, and so on) without having to download the modules in
+their entirety.
 
 To install, do the usual dance:
     less Makefile.PL

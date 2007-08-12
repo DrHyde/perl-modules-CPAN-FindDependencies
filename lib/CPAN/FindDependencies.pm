@@ -42,17 +42,13 @@ If passed a module name, it returns a list of modules on which that
 module depends.  If passed a distribution name, it returns a list of
 distributions instead.
 
-=head1 IMPLEMENTATION NOTES
+=head1 BUGS/WARNINGS/LIMITATIONS
 
 The module assumes that you have a working and configured CPAN.pm,
 and that you have web access to L<http://search.cpan.org/>.  It
 uses modules' META.yml files to divine dependencies.  If any
 META.yml files are missing, the distribution's dependencies will not
-be found.
-
-=head1 BUGS/WARNINGS
-
-None known
+be found and a warning will be spat out.
 
 =head1 AUTHOR and FEEDBACK
 
@@ -135,6 +131,7 @@ sub _getreqs_uncached {
         GET => "http://search.cpan.org/src/$author/$distname/META.yml"
     ));
     if(!$res->is_success()) {
+        warn(__PACKAGE__.": $author/$distname: no META.yml\n");
         return [];
     } else {
         my $yaml = YAML::Load($res->content());
