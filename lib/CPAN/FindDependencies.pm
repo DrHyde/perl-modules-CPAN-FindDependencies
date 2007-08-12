@@ -111,6 +111,8 @@ sub _finddeps_uncached {
     my $author = $dist->{RO}->{CPAN_USERID};
     my $distname = $dist->{RO}->{CPAN_FILE};
 
+    return [] unless($distname);
+
     $distname =~ s!(^.*/|(\.tar\.gz|\.zip)$)!!g;
 
     return [] if($distsvisited->{$distname} || $module eq 'perl' || $distname =~ /^perl/);
