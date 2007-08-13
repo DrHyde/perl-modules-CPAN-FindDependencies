@@ -35,8 +35,8 @@ although you can make that happen in the usual fashion.
 =head2 finddeps
 
 Takes a single compulsory parameter, the name of a module (ie Some::Module)
-or the name of a distribution complete with version number (ie
-Some-Distribution-1.234); and the following named parameters:
+or the name of a distribution complete with author and version number (ie
+PAUSEID/Some-Distribution-1.234); and the following named parameters:
 
 =over
 
@@ -112,7 +112,13 @@ sub finddeps {
 sub _module2dist { CPAN::Shell->expand("Module", $_[0]); }
 
 sub _dist2module {
-    die("Don't yet know how to turn a dist into a module name\n");
+    my $dist = shift;
+    if($dist !~ m'^([A-Z]/[A-Z]{2}/)?[A-Z]{3,9}/[a-zA-Z.0-9_-]+\.tar\.gz|\.zip$') {
+        die(__PACKAGE__."::_dist2module: $dist isn't a legal package name\n");
+    }
+    
+    (my $results = `$^X -MCPAN -e "CPAN::Shell->i('$dist')"`) =~ s/.*CONTAINSMODS\s+//s;
+    return (split(/\s+/, $results))[0];
 }
 
 # FIXME make these memoise, maybe to disk
