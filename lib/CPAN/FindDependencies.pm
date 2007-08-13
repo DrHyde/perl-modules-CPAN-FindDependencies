@@ -98,7 +98,7 @@ sub finddeps {
     );
 
     my @deps = _finddeps(
-        ($target =~ /::/) ? $target : _dist2module($target),
+        ($target =~ m!/!) ? _dist2module($target) : $target,
         $ua,
         \%opts,
         {}
@@ -131,8 +131,13 @@ sub _finddeps_uncached {
 
     my $dist = _module2dist($module);
 
-    my $author = $dist->{RO}->{CPAN_USERID};
-    my $distname = $dist->{RO}->{CPAN_FILE};
+    return [] unless($dist->{RO}->{CPAN_FILE});
+
+    # Can't trust the author data returned by CPAN.pm as it looks at
+    # the original author of a module, not the author of the distribution
+    # it lives in.  eg Number::Phone::Country
+    (my $author = my $distname = $dist->{RO}->{CPAN_FILE}) =~
+        s/.*\/([A-Z]{3,9})\/[^\/]+$/$1/;
 
     return [] unless($distname);
 
