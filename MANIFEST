@@ -3,3 +3,6 @@ lib/CPAN/FindDependencies.pm
 Makefile.PL
 MANIFEST
 README
+t/00-nometa.t
+t/pod-coverage.t
+t/pod.t

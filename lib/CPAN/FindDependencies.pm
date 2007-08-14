@@ -49,6 +49,7 @@ the inheritance tree;
 
 Failure to get a module's dependencies will be a fatal error instead of merely
 emiting a warning
+
 =back
 
 If given a module name, it returns a list of modules on which that
@@ -108,8 +109,13 @@ sub finddeps {
     return @deps;
 }
 
-# FIXME make CPAN.pm silent
-sub _module2dist { CPAN::Shell->expand("Module", $_[0]); }
+sub _module2dist {
+    my $devnull; my $oldfh;
+    open($devnull, '>>/dev/null') && do { $oldfh = select($devnull) };
+    my $mod = CPAN::Shell->expand("Module", $_[0]);
+    select($oldfh) if($oldfh);
+    return $mod;
+}
 
 sub _dist2module {
     my $dist = shift;
