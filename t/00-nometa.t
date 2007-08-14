@@ -7,15 +7,15 @@ use_ok('CPAN::FindDependencies', 'finddeps');
 my $caught = '';
 $SIG{__WARN__} = sub { $caught = $_[0]; };
 
-ok(finddeps('Acme::Licence') == 1 &&
-   (finddeps('Acme::Licence'))[0]->{ID} eq 'Acme::Licence',
+my @results = finddeps('Acme::Licence');
+ok(@results == 1 && $results[0]->{ID} eq 'Acme::Licence',
    "Modules with no META.yml appear in the list of results");
 ok($caught eq "CPAN::FindDependencies: DCANTRELL/Acme-Licence-1.0: no META.yml\n",
    "... and generate a warning");
 $caught = '';
 
-ok(finddeps('DCANTRELL/Acme-Licence-1.0.tar.gz') == 1 &&
-   (finddeps('DCANTRELL/Acme-Licence-1.0.tar.gz'))[0]->{ID} eq 'Acme::Licence',
+@results = finddeps('DCANTRELL/Acme-Licence-1.0.tar.gz');
+ok(@results == 1 && $results[0]->{ID} eq 'Acme::Licence',
    "Distributions with no META.yml appear in the list of results");
 ok($caught eq "CPAN::FindDependencies: DCANTRELL/Acme-Licence-1.0: no META.yml\n",
    "... and generate a warning");
