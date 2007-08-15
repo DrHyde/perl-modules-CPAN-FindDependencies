@@ -4,5 +4,7 @@ Makefile.PL
 MANIFEST
 README
 t/00-nometa.t
+t/01-dependencies.t
+t/02-withdepth.t
 t/pod-coverage.t
 t/pod.t
