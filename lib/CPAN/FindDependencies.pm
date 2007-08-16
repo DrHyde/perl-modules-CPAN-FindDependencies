@@ -1,5 +1,5 @@
 #!perl -w
-# $Id: FindDependencies.pm,v 1.9 2007/08/16 22:27:17 drhyde Exp $
+# $Id: FindDependencies.pm,v 1.10 2007/08/16 23:16:45 drhyde Exp $
 package CPAN::FindDependencies;
 
 use strict;
@@ -53,9 +53,7 @@ emiting a warning
 
 =back
 
-If given a module name, it returns a list of modules on which that
-module depends.  If passed a distribution name, it returns a list of
-distributions instead.
+It returns a list of CPAN::Module objects.
 
 =head1 BUGS/WARNINGS/LIMITATIONS
 
@@ -107,12 +105,14 @@ sub finddeps {
     );
 
     @deps = map { delete($_->{_depth}); $_; } @deps unless($opts{withdepth});
+
     return @deps;
 }
 
-sub _module2dist {
+sub _module2obj {
     my $devnull; my $oldfh;
     open($devnull, '>>/dev/null') && do { $oldfh = select($devnull) };
+    CPAN::Index->reload();
     my $mod = CPAN::Shell->expand("Module", $_[0]);
     select($oldfh) if($oldfh);
     return $mod;
@@ -120,12 +120,15 @@ sub _module2dist {
 
 sub _dist2module {
     my $dist = shift;
-    if($dist !~ m'^([A-Z]/[A-Z]{2}/)?[A-Z]{3,9}/[a-zA-Z.0-9_-]+\.tar\.gz|\.zip$') {
-        die(__PACKAGE__."::_dist2module: $dist isn't a legal package name\n");
-    }
     
-    (my $results = `$^X -MCPAN -e "CPAN::Shell->i('$dist')"`) =~ s/.*CONTAINSMODS\s+//s;
-    return (split(/\s+/, $results))[0];
+    CPAN::Index->reload();
+    return CPAN::Shell->expand("Distribution", $dist)->containsmods();
+    # if($dist !~ m'^([A-Z]/[A-Z]{2}/)?[A-Z]{3,9}/[a-zA-Z.0-9_-]+\.tar\.gz|\.zip$') {
+    #     die(__PACKAGE__."::_dist2module: $dist isn't a legal package name\n");
+   #  }
+    
+    # (my $results = `$^X -MCPAN -e "CPAN::Shell->i('$dist')"`) =~ s/.*CONTAINSMODS\s+//s;
+    # return (split(/\s+/, $results))[0];
 }
 
 # FIXME make these memoise, maybe to disk
@@ -136,7 +139,7 @@ sub _finddeps_uncached {
     my($module, $ua, $opts, $distsvisited, $depth) = @_;
     $depth ||= 0;
 
-    my $dist = _module2dist($module);
+    my $dist = _module2obj($module);
 
     return [] unless($dist->{RO}->{CPAN_FILE});
 
