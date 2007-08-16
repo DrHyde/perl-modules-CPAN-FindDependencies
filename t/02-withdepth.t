@@ -1,7 +1,10 @@
+#!perl -w
 use strict;
-$^W = 1;
 
-use Test::More tests => 5;
+use Test::More;
+require 't/lib/chkenv.pm';
+plan tests => 5;
+
 use CPAN::FindDependencies 'finddeps';
 
 # $SIG{__WARN__} = sub { }; # silently eat warnings

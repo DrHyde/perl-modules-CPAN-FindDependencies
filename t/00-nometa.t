@@ -1,7 +1,10 @@
+#!perl -w
 use strict;
-$^W = 1;
 
-use Test::More tests => 6;
+use Test::More;
+require 't/lib/chkenv.pm';
+plan tests => 6;
+
 use_ok('CPAN::FindDependencies', 'finddeps');
 
 my $caught = '';

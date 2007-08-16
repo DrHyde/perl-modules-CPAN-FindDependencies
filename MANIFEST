@@ -8,3 +8,4 @@ t/01-dependencies.t
 t/02-withdepth.t
 t/pod-coverage.t
 t/pod.t
+t/lib/chkenv.pm
