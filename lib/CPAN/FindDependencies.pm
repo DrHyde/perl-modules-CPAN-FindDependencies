@@ -1,7 +1,8 @@
+#!perl -w
+# $Id: FindDependencies.pm,v 1.9 2007/08/16 22:27:17 drhyde Exp $
 package CPAN::FindDependencies;
 
 use strict;
-use warnings;
 
 use CPAN;
 use YAML ();

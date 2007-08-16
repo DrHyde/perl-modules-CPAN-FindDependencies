@@ -1,4 +1,5 @@
 #!perl -w
+# $Id: 01-dependencies.t,v 1.3 2007/08/16 22:27:17 drhyde Exp $
 use strict;
 
 use Test::More;
