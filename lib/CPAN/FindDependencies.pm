@@ -1,5 +1,5 @@
 #!perl -w
-# $Id: FindDependencies.pm,v 1.11 2007/08/17 16:01:06 drhyde Exp $
+# $Id: FindDependencies.pm,v 1.12 2007/08/17 20:38:16 drhyde Exp $
 package CPAN::FindDependencies;
 
 use strict;
@@ -116,7 +116,9 @@ sub _module2obj {
 sub _dist2module {
     my $dist = shift;
     
-    return (CPAN::Shell->expand("Distribution", $dist)->containsmods())[0];
+    my @mods = (CPAN::Shell->expand("Distribution", $dist)->containsmods())[0];
+    print Dumper(\@mods);
+    return $mods[0] ? $mods[0] : ();
 }
 
 # FIXME make these memoise, maybe to disk
@@ -131,9 +133,6 @@ sub _finddeps_uncached {
 
     return [] unless(blessed($module) && $module->cpan_file());
 
-    # Can't trust the author data returned by CPAN.pm as it looks at
-    # the original author of a module, not the author of the distribution
-    # it lives in.  eg Number::Phone::Country -- is this still true?
     my $author = $module->distribution()->author()->id();
     (my $distname = $module->distribution()->id()) =~
         s/^.*\/$author\/(.*)\.(tar\.(gz|bz2?)|zip)$/$1/;

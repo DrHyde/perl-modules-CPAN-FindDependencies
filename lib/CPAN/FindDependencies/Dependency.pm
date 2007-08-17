@@ -1,4 +1,4 @@
-# $Id: Dependency.pm,v 1.2 2007/08/17 16:01:06 drhyde Exp $
+# $Id: Dependency.pm,v 1.3 2007/08/17 20:38:16 drhyde Exp $
 #!perl -w
 package CPAN::FindDependencies::Dependency;
 
@@ -40,7 +40,7 @@ The name of the module
 
 =cut
 
-sub name { $_[0]->name(); }
+sub name { $_[0]->cpanmodule()->id(); }
 
 =head2 distribution
 
@@ -48,7 +48,7 @@ The name of the distribution containing the module
 
 =cut
 
-sub distribution { $_[0]->distribution(); }
+sub distribution { $_[0]->cpanmodule()->distribution(); }
 
 =head2 depth
 
