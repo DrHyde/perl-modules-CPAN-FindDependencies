@@ -1,10 +1,9 @@
 #!perl -w
-# $Id: FindDependencies.pm,v 1.12 2007/08/17 20:38:16 drhyde Exp $
+# $Id: FindDependencies.pm,v 1.13 2007/08/17 21:26:08 drhyde Exp $
 package CPAN::FindDependencies;
 
 use strict;
 
-use Data::Dumper;
 use CPAN;
 use YAML ();
 use LWP::UserAgent;
@@ -26,10 +25,13 @@ CPAN::FindDependencies - find dependencies for modules on the CPAN
 
 =head1 SYNOPSIS
 
+    # get an array of CPAN.pm's dependencies
     use CPAN::FindDependencies;
-
-    print "$module depends on:\n";
-    print join("\n", CPAN::FindDependencies::finddeps($module))."\n";
+    my @dependencies = CPAN::FindDependencies::finddeps("CPAN");
+    foreach my $dep (@dependencies) {
+        print ' ' x $dep->depth();
+        print $dep->name().' ('.$dep->distribution().")\n";
+    }
 
 =head1 FUNCTIONS
 
@@ -90,6 +92,12 @@ modify and distribute it under the same terms as perl itself.
 sub finddeps {
     my($target, %opts) = @_;
 
+    # _silence(sub {
+    #     CPAN::HandleConfig->load();
+    #     CPAN::Shell::setup_output();
+    #     CPAN::Index->reload()
+    # });
+
     my $ua = LWP::UserAgent->new(
         agent => "CPAN-FindDependencies/$VERSION",
         from => hostname()
@@ -106,18 +114,21 @@ sub finddeps {
 }
 
 sub _module2obj {
+    my $module = shift;
     my $devnull; my $oldfh;
     open($devnull, '>>/dev/null') && do { $oldfh = select($devnull) };
-    my $mod = CPAN::Shell->expand("Module", $_[0]);
+    $module = CPAN::Shell->expand("Module", $module);
     select($oldfh) if($oldfh);
-    return $mod;
+    return $module;
 }
 
 sub _dist2module {
     my $dist = shift;
     
-    my @mods = (CPAN::Shell->expand("Distribution", $dist)->containsmods())[0];
-    print Dumper(\@mods);
+    my $devnull; my $oldfh;
+    open($devnull, '>>/dev/null') && do { $oldfh = select($devnull) };
+    my @mods = sort { $a cmp $b } (CPAN::Shell->expand("Distribution", $dist)->containsmods());
+    select($oldfh) if($oldfh);
     return $mods[0] ? $mods[0] : ();
 }
 
@@ -131,7 +142,7 @@ sub _finddeps_uncached {
 
     $module = _module2obj($module);
 
-    return [] unless(blessed($module) && $module->cpan_file());
+    return [] unless(blessed($module) && $module->cpan_file() && $module->distribution());
 
     my $author = $module->distribution()->author()->id();
     (my $distname = $module->distribution()->id()) =~
@@ -161,7 +172,7 @@ sub _getreqs_uncached {
         if($opts->{fatalerrors}) {
             die(__PACKAGE__.": $author/$distname: no META.yml\n");
         } else { 
-            warn(__PACKAGE__.": $author/$distname: no META.yml\n");
+            warn('WARNING: '.__PACKAGE__.": $author/$distname: no META.yml\n");
         }
         return [];
     } else {

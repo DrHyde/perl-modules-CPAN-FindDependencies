@@ -1,19 +1,14 @@
 #!perl -w
-# $Id: 02-depth.t,v 1.1 2007/08/17 16:01:06 drhyde Exp $
+# $Id: 02-depth.t,v 1.2 2007/08/17 21:26:08 drhyde Exp $
 use strict;
 
 use Test::More;
 require 't/lib/chkenv.pm';
-plan tests => 5;
+plan tests => 4;
 
 use CPAN::FindDependencies 'finddeps';
 
-# $SIG{__WARN__} = sub { }; # silently eat warnings
-
-ok(!exists((finddeps('CPAN'))[0]->{_depth}),
-    "No _depth field if we don't ask for it");
-
-my %deps = map { $_->{ID}, $_->{_depth} } finddeps('CPAN', withdepth => 1);
+my %deps = map { $_->name(), $_->depth() } finddeps('CPAN');
 
 ok($deps{CPAN} == 0, "The 'root' module has zero depth");
 ok($deps{'Test::More'} == 1 &&

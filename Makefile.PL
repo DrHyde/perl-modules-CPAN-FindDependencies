@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.5 2007/08/16 22:27:17 drhyde Exp $
+# $Id: Makefile.PL,v 1.6 2007/08/17 21:26:08 drhyde Exp $
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
@@ -8,5 +8,6 @@ WriteMakefile(
         'CPAN'           => 1.52,   # guess
         'YAML'           => 0.61,   # after interface change
         'LWP::UserAgent' => 2.032,
+        'Scalar::Util'   => 1.14
     }
 );

@@ -4,9 +4,11 @@ lib/CPAN/FindDependencies/Dependency.pm
 Makefile.PL
 MANIFEST
 README
+examples/cpandeps.pl
 t/00-nometa.t
 t/01-dependencies.t
 t/02-depth.t
+t/03-dependency-class.t
 t/pod-coverage.t
 t/pod.t
 t/lib/chkenv.pm
