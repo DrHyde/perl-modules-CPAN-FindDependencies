@@ -1,13 +1,16 @@
 #!perl -w
-# $Id: FindDependencies.pm,v 1.10 2007/08/16 23:16:45 drhyde Exp $
+# $Id: FindDependencies.pm,v 1.11 2007/08/17 16:01:06 drhyde Exp $
 package CPAN::FindDependencies;
 
 use strict;
 
+use Data::Dumper;
 use CPAN;
 use YAML ();
 use LWP::UserAgent;
+use Scalar::Util qw(blessed);
 use Sys::Hostname;  # core in all p5
+use CPAN::FindDependencies::Dependency;
 
 use vars qw($VERSION @ISA @EXPORT_OK);
 
@@ -41,11 +44,6 @@ PAUSEID/Some-Distribution-1.234); and the following named parameters:
 
 =over
 
-=item withdepth
-
-The objects returned will have an extra '_depth' field so you can reconstruct
-the inheritance tree;
-
 =item fatalerrors
 
 Failure to get a module's dependencies will be a fatal error instead of merely
@@ -53,7 +51,7 @@ emiting a warning
 
 =back
 
-It returns a list of CPAN::Module objects.
+It returns a list of CPAN::FindDependencies::Dependency objects.
 
 =head1 BUGS/WARNINGS/LIMITATIONS
 
@@ -104,15 +102,12 @@ sub finddeps {
         {}
     );
 
-    @deps = map { delete($_->{_depth}); $_; } @deps unless($opts{withdepth});
-
     return @deps;
 }
 
 sub _module2obj {
     my $devnull; my $oldfh;
     open($devnull, '>>/dev/null') && do { $oldfh = select($devnull) };
-    CPAN::Index->reload();
     my $mod = CPAN::Shell->expand("Module", $_[0]);
     select($oldfh) if($oldfh);
     return $mod;
@@ -121,14 +116,7 @@ sub _module2obj {
 sub _dist2module {
     my $dist = shift;
     
-    CPAN::Index->reload();
-    return CPAN::Shell->expand("Distribution", $dist)->containsmods();
-    # if($dist !~ m'^([A-Z]/[A-Z]{2}/)?[A-Z]{3,9}/[a-zA-Z.0-9_-]+\.tar\.gz|\.zip$') {
-    #     die(__PACKAGE__."::_dist2module: $dist isn't a legal package name\n");
-   #  }
-    
-    # (my $results = `$^X -MCPAN -e "CPAN::Shell->i('$dist')"`) =~ s/.*CONTAINSMODS\s+//s;
-    # return (split(/\s+/, $results))[0];
+    return (CPAN::Shell->expand("Distribution", $dist)->containsmods())[0];
 }
 
 # FIXME make these memoise, maybe to disk
@@ -136,31 +124,30 @@ sub _finddeps { return @{_finddeps_uncached(@_)}; }
 sub _getreqs  { return @{_getreqs_uncached(@_)}; }
 
 sub _finddeps_uncached {
-    my($module, $ua, $opts, $distsvisited, $depth) = @_;
+    my($module, $ua, $opts, $visited, $depth) = @_;
     $depth ||= 0;
 
-    my $dist = _module2obj($module);
+    $module = _module2obj($module);
 
-    return [] unless($dist->{RO}->{CPAN_FILE});
+    return [] unless(blessed($module) && $module->cpan_file());
 
     # Can't trust the author data returned by CPAN.pm as it looks at
     # the original author of a module, not the author of the distribution
-    # it lives in.  eg Number::Phone::Country
-    (my $author = my $distname = $dist->{RO}->{CPAN_FILE}) =~
-        s/.*\/([A-Z]{3,9})\/[^\/]+$/$1/;
+    # it lives in.  eg Number::Phone::Country -- is this still true?
+    my $author = $module->distribution()->author()->id();
+    (my $distname = $module->distribution()->id()) =~
+        s/^.*\/$author\/(.*)\.(tar\.(gz|bz2?)|zip)$/$1/;
 
-    return [] unless($distname);
+    return [] if($visited->{$distname} || $module->distribution()->isa_perl());
+    $visited->{$distname} = 1;
 
-    $distname =~ s!(^.*/|(\.tar\.gz|\.zip)$)!!g;
-
-    return [] if($distsvisited->{$distname} || $module eq 'perl' || $distname =~ /^perl/);
-    $distsvisited->{$distname} = 1;
-
-    $dist->{_depth} = $depth;
     return [
-        $dist,
+        CPAN::FindDependencies::Dependency->_new(
+            depth => $depth,
+            cpanmodule => $module
+        ),
         map {
-            _finddeps($_, $ua, $opts, $distsvisited, $depth + 1);
+            _finddeps($_, $ua, $opts, $visited, $depth + 1);
         } _getreqs($author, $distname, $ua, $opts)
     ];
 }

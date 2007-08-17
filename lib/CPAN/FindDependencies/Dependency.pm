@@ -1,4 +1,4 @@
-# $Id: Dependency.pm,v 1.1 2007/08/17 07:12:34 drhyde Exp $
+# $Id: Dependency.pm,v 1.2 2007/08/17 16:01:06 drhyde Exp $
 #!perl -w
 package CPAN::FindDependencies::Dependency;
 
@@ -24,21 +24,47 @@ The following read-only accessors are available.  You will note that
 there is no public constructor and no mutators.  Objects will be
 created by the CPAN::FindDependencies module.
 
+=cut
+
+sub _new {
+    my($class, %opts) = @_;
+    bless {
+        depth      => $opts{depth},
+        cpanmodule => $opts{cpanmodule}
+    }, $class
+}
+
 =head2 name
 
 The name of the module
+
+=cut
+
+sub name { $_[0]->name(); }
 
 =head2 distribution
 
 The name of the distribution containing the module
 
+=cut
+
+sub distribution { $_[0]->distribution(); }
+
 =head2 depth
 
 How deeply nested this module is in the dependency tree
 
+=cut
+
+sub depth { return $_[0]->{depth} }
+
 =head2 cpanmodule
 
-The CPAN::Module object from which all this was derived
+The CPAN::Module object from which most of this was derived
+
+=cut
+
+sub cpanmodule { return $_[0]->{cpanmodule} }
 
 =head1 BUGS/LIMITATIONS
 
