@@ -1,5 +1,5 @@
 #!perl -w
-# $Id: FindDependencies.pm,v 1.13 2007/08/17 21:26:08 drhyde Exp $
+# $Id: FindDependencies.pm,v 1.14 2007/08/17 21:41:54 drhyde Exp $
 package CPAN::FindDependencies;
 
 use strict;
@@ -25,7 +25,6 @@ CPAN::FindDependencies - find dependencies for modules on the CPAN
 
 =head1 SYNOPSIS
 
-    # get an array of CPAN.pm's dependencies
     use CPAN::FindDependencies;
     my @dependencies = CPAN::FindDependencies::finddeps("CPAN");
     foreach my $dep (@dependencies) {
@@ -53,7 +52,24 @@ emiting a warning
 
 =back
 
-It returns a list of CPAN::FindDependencies::Dependency objects.
+It returns a list of CPAN::FindDependencies::Dependency objects, whose
+useful methods are:
+
+=over
+
+=item name
+
+The module's name
+
+=item distribution
+
+The distribution containing this module
+
+=item depth
+
+How deep in the dependency tree this module is
+
+=back
 
 =head1 BUGS/WARNINGS/LIMITATIONS
 
@@ -63,40 +79,50 @@ uses modules' META.yml files to divine dependencies.  If any
 META.yml files are missing, the distribution's dependencies will not
 be found and a warning will be spat out.
 
-=head1 AUTHOR and FEEDBACK
+It starts up quite slowly, as it forces CPAN.pm to reload its indexes.
 
-David Cantrell E<lt>david@cantrell.org.ukE<gt>
+=head1 FEEDBACK
 
-I welcome constructive criticism.  If you think you have found a
-bug, or would like a new feature, please first make sure you have
-read *all* the documentation, let me know what you have tried, and
-how the results differ from what you expect or want.
-
-The best bug reports include a test file, which will fail with
-the most recent version of the module in CVS
-(see http://drhyde.cvs.sourceforge.net/drhyde/perlmodules/) and
-will pass when the bug has been fixed.
+I welcome feedback about my code, including constructive criticism
+and bug reports.  The best bug reports include files that I can add
+to the test suite, which fail with the current code in CVS and will
+pass once I've fixed the bug
 
 Feature requests are far more likely to get implemented if you submit
 a patch yourself.
 
-=head1 LICENCE and COPYRIGHT
+=head1 CVS
 
-This software is Copyright 2007 David Cantrell.  You may use,
-modify and distribute it under the same terms as perl itself.
+L<http://drhyde.cvs.sourceforge.net/drhyde/perlmodules/CPAN-FindDependencies/>
+
+=head1 SEE ALSO
+
+L<CPAN>
+
+L<http://cpandeps.cantrell.org.uk/>
+
+=head1 AUTHOR, LICENCE and COPYRIGHT
+
+Copyright 2007 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
+
+This module is free-as-in-speech software, and may be used,
+distributed, and modified under the same terms as Perl itself.
+
+=head1 CONSPIRACY
+
+This module is also free-as-in-mason software.
 
 =cut
 
-1;
+my $devnull; my $oldfh;
+open($devnull, '>>/dev/null') && do { $oldfh = select($devnull) };
+CPAN::HandleConfig->load();
+CPAN::Shell::setup_output();
+CPAN::Index->reload();
+select($oldfh) if($oldfh);
 
 sub finddeps {
     my($target, %opts) = @_;
-
-    # _silence(sub {
-    #     CPAN::HandleConfig->load();
-    #     CPAN::Shell::setup_output();
-    #     CPAN::Index->reload()
-    # });
 
     my $ua = LWP::UserAgent->new(
         agent => "CPAN-FindDependencies/$VERSION",

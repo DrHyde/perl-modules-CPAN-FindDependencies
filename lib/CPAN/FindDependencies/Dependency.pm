@@ -1,8 +1,12 @@
-# $Id: Dependency.pm,v 1.4 2007/08/17 21:26:08 drhyde Exp $
+# $Id: Dependency.pm,v 1.5 2007/08/17 21:41:54 drhyde Exp $
 #!perl -w
 package CPAN::FindDependencies::Dependency;
 
 use strict;
+
+use vars qw($VERSION);
+
+$VERSION = '1.0';
 
 =head1 NAME
 
@@ -10,9 +14,7 @@ CPAN::FindDependencies::Dependency - object representing a module dependency
 
 =head1 SYNOPSIS
 
-    # get an array of CPAN.pm's dependencies
     my @dependencies = CPAN::FindDependencies::finddeps("CPAN");
-
     foreach my $dep (@dependencies) {
         print ' ' x $dep->depth();
         print $dep->name().' ('.$dep->distribution().")\n";
