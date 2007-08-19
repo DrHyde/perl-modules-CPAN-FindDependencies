@@ -1,0 +1,13 @@
+#!perl -w
+
+use strict;
+
+use CPAN::FindDependencies;
+
+my @deps = CPAN::FindDependencies::finddeps(shift, nowarnings => 1);
+foreach my $dep (@deps) {
+    print '  ' x $dep->depth();
+    print $dep->name().
+          ' ('.$dep->distribution().")\n";
+}
+           

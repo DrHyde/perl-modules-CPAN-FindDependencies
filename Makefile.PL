@@ -1,9 +1,12 @@
-# $Id: Makefile.PL,v 1.7 2007/08/19 00:44:01 drhyde Exp $
+# $Id: Makefile.PL,v 1.8 2007/08/19 11:57:11 drhyde Exp $
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
     NAME         => 'CPAN::FindDependencies',
     VERSION_FROM => 'lib/CPAN/FindDependencies.pm',
+    EXE_FILES    => [qw(
+        examples/cpandeps
+    )],
     PREREQ_PM    => {
         'CPAN'           => 1.9102,
         'YAML'           => 0.61,

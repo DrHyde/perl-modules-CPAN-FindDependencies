@@ -4,7 +4,7 @@ lib/CPAN/FindDependencies/Dependency.pm
 Makefile.PL
 MANIFEST
 README
-examples/cpandeps.pl
+examples/cpandeps
 t/00-nometa.t
 t/01-dependencies.t
 t/02-depth.t
