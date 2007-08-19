@@ -1,5 +1,5 @@
 #!perl -w
-# $Id: FindDependencies.pm,v 1.14 2007/08/17 21:41:54 drhyde Exp $
+# $Id: FindDependencies.pm,v 1.15 2007/08/19 00:44:01 drhyde Exp $
 package CPAN::FindDependencies;
 
 use strict;
@@ -17,7 +17,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '1.0';
+$VERSION = '1.01';
 
 =head1 NAME
 
