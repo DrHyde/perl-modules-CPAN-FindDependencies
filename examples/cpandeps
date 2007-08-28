@@ -2,7 +2,13 @@
 
 use strict;
 
-use CPAN::FindDependencies;
+use CPAN::Config;
+
+eval "use CPAN::FindDependencies;";
+if($@) {
+    print STDERR "Couldn't load CPAN::FindDependencies.\n";
+    print STDERR "Check permissions on $CPAN::Config{cpan_home}\n";
+}
 
 my @deps = CPAN::FindDependencies::finddeps(shift, nowarnings => 1);
 foreach my $dep (@deps) {

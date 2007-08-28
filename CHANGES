@@ -1,3 +1,4 @@
+XXXX    XXXXXXXXXX      Error checking in 'cpandeps' script
 1.02    2007-07-19      Now installs 'cpandeps' script;
                         Added 'nowarnings'
 1.01    2007-08-19      Updated dependency to CPAN.pm 1.9102
