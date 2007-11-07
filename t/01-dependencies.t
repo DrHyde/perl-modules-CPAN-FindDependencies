@@ -1,5 +1,5 @@
 #!perl -w
-# $Id: 01-dependencies.t,v 1.5 2007/08/17 22:14:11 drhyde Exp $
+# $Id: 01-dependencies.t,v 1.6 2007/11/07 23:32:36 drhyde Exp $
 use strict;
 
 use Test::More;
@@ -14,9 +14,9 @@ my $dist = CPAN::Shell->expand("Module", "CPAN")->distribution()->id();
 select($oldfh) if($oldfh);
 
 is_deeply(
-    [map { [$_->depth(), $_->name(), $_->distribution() ] } finddeps('CPAN')],
-    [map { [$_->depth(), $_->name(), $_->distribution() ] } finddeps($dist)],
+    [map { [$_->depth(), $_->name(), $_->distribution() ] } finddeps('CPAN', nowarnings => 1)],
+    [map { [$_->depth(), $_->name(), $_->distribution() ] } finddeps($dist, nowarnings => 1)],
     "A module and its distribution have the same dependencies");
 
-ok((finddeps('CPAN'))[0]->name() eq 'CPAN',
+ok((finddeps('CPAN', nowarnings => 1))[0]->name() eq 'CPAN',
     "First entry in lists is the module itself");

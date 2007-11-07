@@ -1,5 +1,5 @@
 #!perl -w
-# $Id: 02-depth.t,v 1.3 2007/08/17 22:14:11 drhyde Exp $
+# $Id: 02-depth.t,v 1.4 2007/11/07 23:32:36 drhyde Exp $
 use strict;
 
 use Test::More;
@@ -8,7 +8,7 @@ plan tests => 1;
 
 use CPAN::FindDependencies 'finddeps';
 
-my %deps = map { $_->name(), $_->depth() } finddeps('CPAN');
+my %deps = map { $_->name(), $_->depth() } finddeps('CPAN', nowarnings => 1);
 
 ok($deps{CPAN} == 0, "The 'root' module has zero depth");
 

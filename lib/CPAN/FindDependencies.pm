@@ -1,5 +1,5 @@
 #!perl -w
-# $Id: FindDependencies.pm,v 1.17 2007/08/19 11:58:31 drhyde Exp $
+# $Id: FindDependencies.pm,v 1.18 2007/11/07 23:32:36 drhyde Exp $
 package CPAN::FindDependencies;
 
 use strict;
@@ -17,7 +17,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '1.02';
+$VERSION = '1.1';
 
 =head1 NAME
 
@@ -209,7 +209,9 @@ sub _getreqs_uncached {
     } else {
         my $yaml = YAML::Load($res->content());
         return [] if(!defined($yaml));
-        return [keys %{$yaml->{requires}}];
+        $yaml->{requires} ||= {};
+        $yaml->{build_requires} ||= {};
+        return [keys %{{ %{$yaml->{requires}}, %{$yaml->{build_requires}} }}];
     }
 }
 
