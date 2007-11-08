@@ -1,0 +1,43 @@
+=head1 CPANdeps: do you really know your dependencies?
+
+One of perl's strongest selling points is the CPAN.  Having such a vast library of freely-reusable code available in one place, and having good quality tools for looking at the documentation, downloading and installing it would be enough for me to love perl even if the language itself was as much of a pain in the arse as C or C++ is.  However, the quality of the CPAN is decidedly variable.  And while the mechanisms we have for specifying and fetching pre-requisites (eg using C<PREREQ_PM> in C<ExtUtils::MakeMaker> make it really easy to re-use the good bits of the CPAN, they also make it distressingly easy to re-use some real rubbish.
+
+CPANdeps L<http://cpandeps.cantrell.org.uk/> is a web-based tool to let you easily sift the good from the bad, and help module authors choose their dependencies.
+
+=head1 Why it exists
+
+Like many of my perlish projects, it started as a discussion on a mailing list.  Someone was grumbling about how perl authors seem to go mad with dependencies and so when you do this:
+
+    $ perl -MCPAN -e 'install qw(Some::Module)'
+
+it's all too easy for it all to fail because deep down in the dependency tree something didn't work.  "What do you mean we go mad with dependencies" I thought.  I rarely have more than two or three in my Makefile.PL.  But then when I started looking a bit deeper, I found that those in turn had dependencies, which had dependencies - and it's really easy to have ten or more pre-requisites, all of which must work.  Of course, they all I<do> work on my development machine and my testing boxes, but I can't test them in all possible environments.  The end result is that sometimes someone who doesn't do perl for a living - one of our long-bearded sysadmin brethren, for example - will try to install some of my software, have problems with a dependency, and decide to use something else.  That's not a problem - I don't care if he doesn't use my software.  But it does become a problem when he goes on to say "Installing perl software is so hard, I'll avoid it in future".
+
+So I decided to write a little tool to help authors figure out what it's good to depend on and what's not.  It pulls together C<CPAN.pm>, L<http://search.cpan.org/> and the CPAN-testers database to figure out what depends on what, all of their test results, and can then give an indication of how good (or bad) an idea it is to depend on a particular module.
+
+If I were one of those painfully trendy "web 2.0" types, I'd call it a mash-up.  But I'm not, so I won't.  I'd appreciate it if you don't either.
+
+=head1 How it works
+
+First, we have to translate a module name into the distribution in which it lives.  If you're interested in C<File::Spec>, for example, that lives in the PathTools distribution.  C<CPAN.pm> knows all about this, and exposes some of its guts to programmers.  The documentation isn't particularly clear, so I also wrote the beginnings of a CPAN.pm "cookbook", which is distributed with recent versions of the module as C<CPAN::API::HOWTO>.  Of course, if the distribution has already been examined, we just skip to the next one.
+
+Next we take the distribution name and turn it into a URL for the distribution's META.yml file.  In the case of C<File::Spec> that would be L<http://search.cpan.org/src/KWILLIAMS/PathTools-3.25/META.yml>.  We fetch that using LWP.  If there's no META.yml, we abort and tell the user, otherwise it's parsed to get a list of modules, each of which gets the same treatment in turn, recursing through the tree of dependencies.
+
+Finally, for each module we look up the test results in a local copy of the CPAN-testers database, and count up the number of passes and fails.  Earlier versions instead screen-scraped the CPAN-testers web site L<http://cpantesters.perl.org/show/PathTools.html>.  This was both horribly slow as it had to download a web page for every single module in the tree (potentially very large pages too) and error-prone - it would, for example, return test results for a developer release of a module instead of for a stable release.  Please, don't screen-scrape.  It makes the baby Jesus cry.
+
+[img:xml-doubleencodedentities.png alongside next two paras]
+
+Once all the data is gathered, the results are displayed for the user, with a tree of modules on the left, coloured bars showing green for test passes, red for fails, and yellow for unknowns in the middle, and then the actual number of pass/fail/unknown results on the right.  At the bottom there's a grand total which attempts to show the likelihood of the entire dependency tree working.  This is calculated by multiplying together the probabilities of success for all the modules in the tree.
+
+As you can see from the screenshot, lots of modules get pulled in as a result of using a testing module like C<Test::Simple>.  This means that the results can be somewhat misleading - many of those modules are core modules distributed with perl and can be assumed to always work.  But they are also "dual-life" modules which have more recent versions available on the CPAN.  And its those that the site looks at.
+
+=head1 Future developments
+
+Clearly I need to handle "dual-life" modules more sensibly.  That will happen when I teach the site about which modules (and which versions of which modules) were core with which perl, and let the user specify the version that they're interested in.  This will both ignore the misleading results that we get from following core modules' dependencies, but will also mean that we can throw away test results for all versions of perl except that which the user is interested in.  I'll also add something for the user to specify the OS he's interested in too.
+
+Of course, I'll still recommend checking results without those filters if you're going to write code for other people to use.  They won't be using the same version of perl or the same OS as you!
+
+A somewhat more thorny problem is that the site is slow.  It caches an lot of data, but loading CPAN.pm in a mod_perl process eats an *awful* lot of memory.  In fact, it eats so much that the cheap virtual machine I'm using runs out and my processes start getting swapped out.  Unfortunately I'm stuck with that hosting provider, as they don't charge for bandwidth.  Potential solutions to that are to use C<Parse::CPAN::Packages> instead of CPAN.pm, or to pre-calculate the dependency trees for the whole of the CPAN, and just update them whenever something new is uploaded.
+
+The source code for the site is, of course, available, and patches are welcome.  I've imported it into Sourceforge's CVS repository, which you can look at in a web browser here L<http://drhyde.cvs.sourceforge.net/drhyde/perlcpandeps/>.
+
+There is also my C<CPAN::FindDependencies> module, which grew out of this project but is seperate from it.  All it does is get the tree of dependencies, without any test results, but on the other hand you can also give it a distribution name instead of just a module name.  It will probably remain seperate, as the web site has to focus more on speed than on readability and reusability, although I intend to add the better support for core modules, perl versions, and OSes to the module as well.
