@@ -1,6 +1,15 @@
+2.0     XXXX-XX-XX      This version was a re-write;
+                        Switch to Parse::CPAN::Packages from CPAN.pm;
+                        Much better core module detection;
+                        Perl version option;
+                        Added docs to cpandeps script
+
 1.1     2007-11-07      Error checking in 'cpandeps' script
                         Added 'build_requires' support
+
 1.02    2007-07-19      Now installs 'cpandeps' script;
                         Added 'nowarnings'
+
 1.01    2007-08-19      Updated dependency to CPAN.pm 1.9102
+
 1.0     2007-08-17      Original release
