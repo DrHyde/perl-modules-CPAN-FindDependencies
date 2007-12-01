@@ -1,4 +1,4 @@
-# $Id: Dependency.pm,v 1.5 2007/08/17 21:41:54 drhyde Exp $
+# $Id: Dependency.pm,v 1.6 2007/12/01 23:54:12 drhyde Exp $
 #!perl -w
 package CPAN::FindDependencies::Dependency;
 
@@ -32,7 +32,8 @@ sub _new {
     my($class, %opts) = @_;
     bless {
         depth      => $opts{depth},
-        cpanmodule => $opts{cpanmodule}
+        cpanmodule => $opts{cpanmodule},
+        incore     => $opts{incore}
     }, $class
 }
 
@@ -42,7 +43,7 @@ The name of the module
 
 =cut
 
-sub name { $_[0]->cpanmodule()->id(); }
+sub name { $_[0]->{cpanmodule} }
 
 =head2 distribution
 
@@ -50,7 +51,9 @@ The name of the distribution containing the module
 
 =cut
 
-sub distribution { $_[0]->cpanmodule()->distribution()->id(); }
+sub distribution {
+    $CPAN::FindDependencies::p->package($_[0]->name())->distribution()->prefix();
+}
 
 =head2 depth
 
@@ -60,13 +63,14 @@ How deeply nested this module is in the dependency tree
 
 sub depth { return $_[0]->{depth} }
 
-=head2 cpanmodule
+=head2 incore
 
-The CPAN::Module object from which most of this was derived
+Whether a sufficiently high version of this module can be found in
+the perl core that the user specified.
 
 =cut
 
-sub cpanmodule { return $_[0]->{cpanmodule} }
+sub incore { return $_[0]->{incore} }
 
 =head1 BUGS/LIMITATIONS
 

@@ -1,14 +1,22 @@
 #!perl -w
-# $Id: FindDependencies.pm,v 1.18 2007/11/07 23:32:36 drhyde Exp $
+# $Id: FindDependencies.pm,v 1.19 2007/12/01 23:54:12 drhyde Exp $
 package CPAN::FindDependencies;
 
 use strict;
+use vars qw($p);
 
-use CPAN;
+use Parse::CPAN::Packages;
+
+{
+  open(local *DEVNULL, '>>/dev/null');
+  open(local *STDERR, ">&DEVNULL");
+  $p = Parse::CPAN::Packages->new(_get02packages());
+}
+
 use YAML ();
-use LWP::UserAgent;
+use LWP::Simple;
+use Module::CoreList;
 use Scalar::Util qw(blessed);
-use Sys::Hostname;  # core in all p5
 use CPAN::FindDependencies::Dependency;
 
 use vars qw($VERSION @ISA @EXPORT_OK);
@@ -54,6 +62,12 @@ can't divine their pre-requisites, will be suppressed;
 
 Failure to get a module's dependencies will be a fatal error
 instead of merely emitting a warning;
+
+=item perl
+
+Use this version of perl to figure out what's in core.  If not
+specified, it defaults to 5.005.  Three part version numbers
+(eg 5.8.8) are supported but discouraged.
 
 =back
 
@@ -119,99 +133,132 @@ This module is also free-as-in-mason software.
 
 =cut
 
-my $devnull; my $oldfh;
-open($devnull, '>>/dev/null') && do { $oldfh = select($devnull) };
-CPAN::HandleConfig->load();
-CPAN::Shell::setup_output();
-CPAN::Index->reload();
-select($oldfh) if($oldfh);
-
 sub finddeps {
     my($target, %opts) = @_;
 
-    my $ua = LWP::UserAgent->new(
-        agent => "CPAN-FindDependencies/$VERSION",
-        from => hostname()
-    );
+    $opts{perl} ||= 5.005;
 
-    my @deps = _finddeps(
-        ($target =~ m!/!) ? _dist2module($target) : $target,
-        $ua,
-        \%opts,
-        {}
-    );
+    die(__PACKAGE__.": $opts{perl} is a broken version number\n")
+        if($opts{perl} =~ /[^0-9.]/);
 
-    return @deps;
+    if($opts{perl} =~ /\..*\./) {
+        warn("Three-part version numbers are a bad idea\n")
+            if(!$opts{nowarnings});
+        my @parts = split(/\./, $opts{perl});
+        $opts{perl} = $parts[0] + $parts[1] / 1000 + $parts[2] / 1000000;
+    }
+
+    my $module = ($target =~ m!/!) ? _dist2module($target) : $target;
+
+    return _finddeps(
+        opts    => \%opts,
+        target  => $module,
+        version => $p->package($module)->version(),
+        seen    => {}
+    );
 }
 
 sub _module2obj {
     my $module = shift;
-    my $devnull; my $oldfh;
-    open($devnull, '>>/dev/null') && do { $oldfh = select($devnull) };
-    $module = CPAN::Shell->expand("Module", $module);
-    select($oldfh) if($oldfh);
-    return $module;
+    $module = $p->package($module);
+    return undef if(!$module);
+    return $module->distribution();
 }
 
 sub _dist2module {
-    my $dist = shift;
-    
-    my $devnull; my $oldfh;
-    open($devnull, '>>/dev/null') && do { $oldfh = select($devnull) };
-    my @mods = sort { $a cmp $b } (CPAN::Shell->expand("Distribution", $dist)->containsmods());
-    select($oldfh) if($oldfh);
-    return $mods[0] ? $mods[0] : ();
+    my $d = $p->latest_distribution(shift());
+    my $module = ($d->contains())[0];
+    return ($module, $p->package($module)->version());
 }
 
 # FIXME make these memoise, maybe to disk
 sub _finddeps { return @{_finddeps_uncached(@_)}; }
 sub _getreqs  { return @{_getreqs_uncached(@_)}; }
+sub _get02packages { return _get02packages_uncached(); }
+
+sub _get02packages_uncached {
+    get('http://www.cpan.org/modules/02packages.details.txt.gz') ||
+        die("Couldn't fetch 02packages.details.txt.gz\n");
+}
+
+sub incore {
+    my %args = @_;
+    my $core = $Module::CoreList::version{$args{perl}}{$args{module}};
+    return ($core && $core >= $args{version}) ? $core : undef;
+}
 
 sub _finddeps_uncached {
-    my($module, $ua, $opts, $visited, $depth) = @_;
+    my %args = @_;
+    my( $target, $opts, $depth, $version, $seen) = @args{qw(
+        target opts depth version seen
+    )};
     $depth ||= 0;
 
-    $module = _module2obj($module);
+    return [] if($target eq 'perl');
+    return [
+        CPAN::FindDependencies::Dependency->_new(
+            depth      => $depth,
+            cpanmodule => $target,
+            incore     => 1
+        )
+    ] if(
+        incore(
+            module => $target,
+            perl => $opts->{perl},
+            version => $version)
+    );
 
-    return [] unless(blessed($module) && $module->cpan_file() && $module->distribution());
+    my $dist = _module2obj($target);
 
-    my $author = $module->distribution()->author()->id();
-    (my $distname = $module->distribution()->id()) =~
-        s/^.*\/$author\/(.*)\.(tar\.(gz|bz2?)|zip)$/$1/;
+    return [] unless(blessed($dist));
 
-    return [] if($visited->{$distname} || $module->distribution()->isa_perl());
-    $visited->{$distname} = 1;
+    my $author   = $dist->cpanid();
+    my $distname = $dist->distvname();
+
+    return [] if($seen->{$distname});
+    $seen->{$distname} = 1;
+
+    my %reqs = _getreqs(
+        author   => $author,
+        distname => $distname,
+        opts     => $opts,
+    );
 
     return [
         CPAN::FindDependencies::Dependency->_new(
-            depth => $depth,
-            cpanmodule => $module
+            depth      => $depth,
+            cpanmodule => $target,
+            incore     => 0
         ),
         map {
-            _finddeps($_, $ua, $opts, $visited, $depth + 1);
-        } _getreqs($author, $distname, $ua, $opts)
+            _finddeps(
+                target  => $_,
+                opts    => $opts,
+                depth   => $depth + 1,
+                seen    => $seen,
+                version => $reqs{$_}
+            );
+        } keys %reqs
     ];
 }
 
 sub _getreqs_uncached {
-    my($author, $distname, $ua, $opts) = @_;
+    my %args = @_;
+    my($author, $distname, $opts) = @args{qw(
+        author distname opts
+    )};
 
-    my $res = $ua->request(HTTP::Request->new(
-        GET => "http://search.cpan.org/src/$author/$distname/META.yml"
-    ));
-    if(!$res->is_success()) {
-        if($opts->{fatalerrors}) {
-            die(__PACKAGE__.": $author/$distname: no META.yml\n");
-        } elsif(!$opts->{nowarnings}) { 
-            warn('WARNING: '.__PACKAGE__.": $author/$distname: no META.yml\n");
-        }
+    my $yaml = get("http://search.cpan.org/src/$author/$distname/META.yml");
+    if(!$yaml) {
+        warn('WARNING: '.__PACKAGE__.": $author/$distname: no META.yml\n")
+            if(!$opts->{nowarnings});
         return [];
     } else {
-        my $yaml = YAML::Load($res->content());
+        my $yaml = YAML::Load($yaml);
         return [] if(!defined($yaml));
         $yaml->{requires} ||= {};
         $yaml->{build_requires} ||= {};
-        return [keys %{{ %{$yaml->{requires}}, %{$yaml->{build_requires}} }}];
+        return [%{$yaml->{requires}}, %{$yaml->{build_requires}}];
     }
 }
 

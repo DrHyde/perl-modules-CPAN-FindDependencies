@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.8 2007/08/19 11:57:11 drhyde Exp $
+# $Id: Makefile.PL,v 1.9 2007/12/01 23:54:12 drhyde Exp $
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
@@ -8,9 +8,10 @@ WriteMakefile(
         examples/cpandeps
     )],
     PREREQ_PM    => {
-        'CPAN'           => 1.9102,
-        'YAML'           => 0.61,
-        'LWP::UserAgent' => 2.032,
-        'Scalar::Util'   => 1.14
+        'Parse::CPAN::Packages' => 2.26,
+        'Module::CoreList'      => '2.12',
+        'YAML'                  => 0.61,
+        'LWP::Simple'           => 1.41,
+        'Scalar::Util'          => 1.14
     }
 );

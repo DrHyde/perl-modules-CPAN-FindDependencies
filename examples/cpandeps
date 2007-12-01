@@ -10,10 +10,62 @@ if($@) {
     print STDERR "Check permissions on $CPAN::Config{cpan_home}\n";
 }
 
-my @deps = CPAN::FindDependencies::finddeps(shift, nowarnings => 1);
-foreach my $dep (@deps) {
+my @deps = CPAN::FindDependencies::finddeps(
+    shift,
+    nowarnings => 1,
+    perl => shift
+);
+
+foreach my $dep (grep { !$_->incore() } @deps) {
     print '  ' x $dep->depth();
     print $dep->name().
           ' ('.$dep->distribution().")\n";
 }
-           
+
+=head1 NAME
+
+cpandeps - show a module on the CPAN's dependency tree.
+
+=head1 DESCRIPTION
+
+This program is a simple wrapper around CPAN::FindDependencies.
+
+Given a module name and optionally a version of perl, this program
+will show you the module's dependency tree, excluding anything that
+is core in the version of perl that you specified.  If you don't
+specify a version of perl, it makes the same assumptions as
+CPAN::FindDependencies.
+
+=head1 SYNOPSIS
+
+    cpandeps CPAN::FindDependencies 5.8.8
+
+=head1 WARNINGS, BUGS and FEEDBACK
+
+This script has not been thoroughly tested.
+
+I welcome feedback about my code, including constructive criticism.
+Bug reports should be made using L<http://rt.cpan.org/> or by email.
+
+=head1 SEE ALSO
+
+L<CPAN::FindDependencies>
+
+L<http://cpandeps.cantrell.org.uk/>
+
+=head1 AUTHOR
+
+David Cantrell E<lt>david@cantrell.org.ukE<gt>
+
+=head1 COPYRIGHT AND LICENCE
+
+Copyright 2007 David Cantrell
+
+This software is free-as-in-speech, and may be used, distributed
+and modified under the same conditions as perl itself.
+
+=head1 CONSPIRACY
+
+This software is also free-as-in-mason.
+
+=cut
