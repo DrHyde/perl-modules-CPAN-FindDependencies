@@ -13,5 +13,4 @@ t/pod-coverage.t
 t/pod.t
 t/lib/chkenv.pm
 t/04-build_requires.t
-tpr-article/the-perl-review--cpandeps.pod
-tpr-article/xml-doubleencodedentities.png
+TODO

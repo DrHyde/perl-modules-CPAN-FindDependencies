@@ -1,4 +1,5 @@
 2.0     XXXX-XX-XX      This version was a re-write;
+                        No longer supports searching by distribution;
                         Switch to Parse::CPAN::Packages from CPAN.pm;
                         Much better core module detection;
                         Perl version option;

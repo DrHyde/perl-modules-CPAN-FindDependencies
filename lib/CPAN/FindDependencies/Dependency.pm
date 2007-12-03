@@ -1,4 +1,4 @@
-# $Id: Dependency.pm,v 1.6 2007/12/01 23:54:12 drhyde Exp $
+# $Id: Dependency.pm,v 1.7 2007/12/03 17:46:47 drhyde Exp $
 #!perl -w
 package CPAN::FindDependencies::Dependency;
 
@@ -6,7 +6,7 @@ use strict;
 
 use vars qw($VERSION);
 
-$VERSION = '1.0';
+$VERSION = '1.1';
 
 =head1 NAME
 
@@ -30,11 +30,7 @@ created by the CPAN::FindDependencies module.
 
 sub _new {
     my($class, %opts) = @_;
-    bless {
-        depth      => $opts{depth},
-        cpanmodule => $opts{cpanmodule},
-        incore     => $opts{incore}
-    }, $class
+    bless \%opts, $class;
 }
 
 =head2 name
@@ -52,7 +48,7 @@ The name of the distribution containing the module
 =cut
 
 sub distribution {
-    $CPAN::FindDependencies::p->package($_[0]->name())->distribution()->prefix();
+    $_[0]->{p}->package($_[0]->name())->distribution()->prefix();
 }
 
 =head2 depth
@@ -71,6 +67,15 @@ the perl core that the user specified.
 =cut
 
 sub incore { return $_[0]->{incore} }
+
+=head2 warning
+
+If any warnings were generated while processing the module (even
+if suppressed), this will return them.
+
+=cut
+
+sub warning { return $_[0]->{warning} }
 
 =head1 BUGS/LIMITATIONS
 

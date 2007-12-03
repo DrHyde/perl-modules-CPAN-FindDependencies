@@ -1,31 +1,24 @@
 #!perl -w
-# $Id: FindDependencies.pm,v 1.20 2007/12/01 23:55:38 drhyde Exp $
+# $Id: FindDependencies.pm,v 1.21 2007/12/03 17:46:47 drhyde Exp $
 package CPAN::FindDependencies;
 
 use strict;
-use vars qw($p);
-
-use Parse::CPAN::Packages;
-
-{
-  open(local *DEVNULL, '>>/dev/null');
-  open(local *STDERR, ">&DEVNULL");
-  $p = Parse::CPAN::Packages->new(_get02packages());
-}
+use vars qw($p $VERSION @ISA @EXPORT_OK);
 
 use YAML ();
 use LWP::Simple;
 use Module::CoreList;
 use Scalar::Util qw(blessed);
 use CPAN::FindDependencies::Dependency;
-
-use vars qw($VERSION @ISA @EXPORT_OK);
+use Parse::CPAN::Packages;
 
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '2.0';
+$VERSION = '1.99_01';
+
+use constant DEFAULT02PACKAGES => 'http://www.cpan.org/modules/02packages.details.txt.gz';
 
 =head1 NAME
 
@@ -40,6 +33,13 @@ CPAN::FindDependencies - find dependencies for modules on the CPAN
         print $dep->name().' ('.$dep->distribution().")\n";
     }
 
+=head1 HOW IT WORKS
+
+The module uses the CPAN packages index to map modules to distributions
+and vice versa, and then fetches distributions' META.yml files from
+C<http://search.cpan.org/> to determine pre-requisites.  This means
+that a working interwebnet connection is required.
+
 =head1 FUNCTIONS
 
 There is just one function, which is not exported by default
@@ -47,9 +47,9 @@ although you can make that happen in the usual fashion.
 
 =head2 finddeps
 
-Takes a single compulsory parameter, the name of a module (ie Some::Module)
-or the name of a distribution complete with author and version number (ie
-PAUSEID/Some-Distribution-1.234); and the following named parameters:
+Takes a single compulsory parameter, the name of a module
+(ie Some::Module); and the following optional
+named parameters:
 
 =over
 
@@ -68,6 +68,20 @@ instead of merely emitting a warning;
 Use this version of perl to figure out what's in core.  If not
 specified, it defaults to 5.005.  Three part version numbers
 (eg 5.8.8) are supported but discouraged.
+
+=item 02packages
+
+The location of CPAN.pm's C<02packages.details.txt.gz> file as a URL.
+To specify a local file, say something like
+C<file:///home/me/minicpan/02packages.details.txt.gz>.  This defaults
+to fetching it from a public CPAN mirror.  The file is fetched once,
+when the module loads.
+
+=item cachedir
+
+A directory to use for caching.  It defaults to no caching.  Even if
+caching is turned on, this is only for META.yml files.  02packages is
+not cached. (This isn't yet implemented)
 
 =back
 
@@ -92,13 +106,15 @@ How deep in the dependency tree this module is
 
 =head1 BUGS/WARNINGS/LIMITATIONS
 
-The module assumes that you have a working and configured CPAN.pm,
-and that you have web access to L<http://search.cpan.org/>.  It
-uses modules' META.yml files to divine dependencies.  If any
+You must have web access to L<http://search.cpan.org/> and (unless
+you tell it where else to look for the index)
+L<http://www.cpan.org/>.
+If any
 META.yml files are missing, the distribution's dependencies will not
 be found and a warning will be spat out.
 
-It starts up quite slowly, as it forces CPAN.pm to reload its indexes.
+Startup can be slow, especially if it needs to fetch the index from
+the interweb.
 
 =head1 FEEDBACK
 
@@ -120,6 +136,8 @@ L<CPAN>
 
 L<http://cpandeps.cantrell.org.uk/>
 
+L<http://search.cpan.org>
+
 =head1 AUTHOR, LICENCE and COPYRIGHT
 
 Copyright 2007 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
@@ -134,7 +152,7 @@ This module is also free-as-in-mason software.
 =cut
 
 sub finddeps {
-    my($target, %opts) = @_;
+    my($module, %opts) = @_;
 
     $opts{perl} ||= 5.005;
 
@@ -142,20 +160,37 @@ sub finddeps {
         if($opts{perl} =~ /[^0-9.]/);
 
     if($opts{perl} =~ /\..*\./) {
-        warn("Three-part version numbers are a bad idea\n")
-            if(!$opts{nowarnings});
+        _emitwarning(
+            "Three-part version numbers are a bad idea",
+            %opts
+        );
         my @parts = split(/\./, $opts{perl});
         $opts{perl} = $parts[0] + $parts[1] / 1000 + $parts[2] / 1000000;
     }
 
-    my $module = ($target =~ m!/!) ? _dist2module($target) : $target;
+    if(!$p) {
+        local $SIG{__WARN__} = sub {};
+        $p = Parse::CPAN::Packages->new(_get02packages($opts{'02packages'}));
+    }
 
     return _finddeps(
         opts    => \%opts,
         target  => $module,
-        version => $p->package($module)->version(),
-        seen    => {}
+        seen    => {},
+        version => ($p->package($module) ? $p->package($module)->version() : 0)
     );
+}
+
+sub _emitwarning {
+    my($msg, %opts) = @_;
+    $msg = __PACKAGE__.": $msg\n";
+    if(!$opts{nowarnings}) {
+        if($opts{fatalerrors} ) {
+            die('FATAL: '.$msg);
+        } else {
+            warn('WARNING: '.$msg);
+        }
+    }
 }
 
 sub _module2obj {
@@ -165,23 +200,16 @@ sub _module2obj {
     return $module->distribution();
 }
 
-sub _dist2module {
-    my $d = $p->latest_distribution(shift());
-    my $module = ($d->contains())[0];
-    return ($module, $p->package($module)->version());
-}
-
 # FIXME make these memoise, maybe to disk
 sub _finddeps { return @{_finddeps_uncached(@_)}; }
 sub _getreqs  { return @{_getreqs_uncached(@_)}; }
-sub _get02packages { return _get02packages_uncached(); }
 
-sub _get02packages_uncached {
-    get('http://www.cpan.org/modules/02packages.details.txt.gz') ||
-        die("Couldn't fetch 02packages.details.txt.gz\n");
+sub _get02packages {
+    get(shift() || DEFAULT02PACKAGES) ||
+        die(__PACKAGE__.": Couldn't fetch 02packages index file\n");
 }
 
-sub incore {
+sub _incore {
     my %args = @_;
     my $core = $Module::CoreList::version{$args{perl}}{$args{module}};
     return ($core && $core >= $args{version}) ? $core : undef;
@@ -199,10 +227,11 @@ sub _finddeps_uncached {
         CPAN::FindDependencies::Dependency->_new(
             depth      => $depth,
             cpanmodule => $target,
-            incore     => 1
+            incore     => 1,
+            p          => $p
         )
     ] if(
-        incore(
+        _incore(
             module => $target,
             perl => $opts->{perl},
             version => $version)
@@ -223,12 +252,19 @@ sub _finddeps_uncached {
         distname => $distname,
         opts     => $opts,
     );
+    my $warning = '';
+    if($reqs{'-warning'}) {
+        $warning = $reqs{'-warning'};
+        %reqs = ();
+    }
 
     return [
         CPAN::FindDependencies::Dependency->_new(
             depth      => $depth,
             cpanmodule => $target,
-            incore     => 0
+            incore     => 0,
+            p          => $p,
+            ($warning ? (warning => $warning) : ())
         ),
         map {
             _finddeps(
@@ -250,12 +286,11 @@ sub _getreqs_uncached {
 
     my $yaml = get("http://search.cpan.org/src/$author/$distname/META.yml");
     if(!$yaml) {
-        warn('WARNING: '.__PACKAGE__.": $author/$distname: no META.yml\n")
-            if(!$opts->{nowarnings});
-        return [];
+        _emitwarning("$author/$distname: no META.yml", %{$opts});
+        return ['-warning', 'no META.yml'];
     } else {
         my $yaml = YAML::Load($yaml);
-        return [] if(!defined($yaml));
+        return ['-warning', 'no META.yml'] if(!defined($yaml));
         $yaml->{requires} ||= {};
         $yaml->{build_requires} ||= {};
         return [%{$yaml->{requires}}, %{$yaml->{build_requires}}];

@@ -7,19 +7,18 @@ use CPAN::Config;
 eval "use CPAN::FindDependencies;";
 if($@) {
     print STDERR "Couldn't load CPAN::FindDependencies.\n";
-    print STDERR "Check permissions on $CPAN::Config{cpan_home}\n";
 }
 
 my @deps = CPAN::FindDependencies::finddeps(
     shift,
     nowarnings => 1,
-    perl => shift
+    perl => shift,
 );
 
 foreach my $dep (grep { !$_->incore() } @deps) {
     print '  ' x $dep->depth();
-    print $dep->name().
-          ' ('.$dep->distribution().")\n";
+    print '*' if($dep->warning());
+    print $dep->name().' ('.$dep->distribution().")\n";
 }
 
 =head1 NAME
@@ -35,6 +34,10 @@ will show you the module's dependency tree, excluding anything that
 is core in the version of perl that you specified.  If you don't
 specify a version of perl, it makes the same assumptions as
 CPAN::FindDependencies.
+
+It shows the module name, its distribution, and if any warnings were
+raised (such as if a module's dependencies couldn't be fetched) this
+is indicated with an asterisk before the module's name.
 
 =head1 SYNOPSIS
 
