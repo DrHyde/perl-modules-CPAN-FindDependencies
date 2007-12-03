@@ -1,4 +1,4 @@
-2.0     XXXX-XX-XX      This version was a re-write;
+1.99_01 2007-12-03      This version was a re-write;
                         No longer supports searching by distribution;
                         Switch to Parse::CPAN::Packages from CPAN.pm;
                         Much better core module detection;
