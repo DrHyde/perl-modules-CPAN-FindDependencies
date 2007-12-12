@@ -14,3 +14,14 @@ t/pod.t
 t/lib/chkenv.pm
 t/04-build_requires.t
 TODO
+t/cache/CPAN-FindDependencies-1.1/02packages.details.txt.gz
+t/cache/CPAN-FindDependencies-1.1/CPAN-1.9205.yml
+t/cache/CPAN-FindDependencies-1.1/CPAN-FindDependencies-1.1.yml
+t/cache/CPAN-FindDependencies-1.1/ExtUtils-CBuilder-0.21.yml
+t/cache/CPAN-FindDependencies-1.1/File-Temp-0.19.yml
+t/cache/CPAN-FindDependencies-1.1/Module-Build-0.2808.yml
+t/cache/CPAN-FindDependencies-1.1/PathTools-3.25.yml
+t/cache/CPAN-FindDependencies-1.1/Scalar-List-Utils-1.19.yml
+t/cache/CPAN-FindDependencies-1.1/Test-Harness-3.03.yml
+t/cache/CPAN-FindDependencies-1.1/Test-Simple-0.72.yml
+t/cache/CPAN-FindDependencies-1.1/YAML-0.66.yml

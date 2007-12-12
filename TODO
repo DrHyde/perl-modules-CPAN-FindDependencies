@@ -1,3 +1,5 @@
 Add more tests for the module tree to t/01-dependencies.t
 
 Add tests for alternative 02packages and perl versions
+
+Add tests for caching

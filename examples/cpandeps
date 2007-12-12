@@ -12,7 +12,7 @@ if($@) {
 my @deps = CPAN::FindDependencies::finddeps(
     shift,
     nowarnings => 1,
-    perl => shift,
+    @ARGV
 );
 
 foreach my $dep (grep { !$_->incore() } @deps) {
@@ -29,11 +29,10 @@ cpandeps - show a module on the CPAN's dependency tree.
 
 This program is a simple wrapper around CPAN::FindDependencies.
 
-Given a module name and optionally a version of perl, this program
-will show you the module's dependency tree, excluding anything that
-is core in the version of perl that you specified.  If you don't
-specify a version of perl, it makes the same assumptions as
-CPAN::FindDependencies.
+Given a module name, this program will show you the module's
+dependency tree.  It takes exactly the same arguments as the
+C<finddeps> function of CPAN::FindDependencies, with the exception
+that C<nowarnings> is turned *on* by default.
 
 It shows the module name, its distribution, and if any warnings were
 raised (such as if a module's dependencies couldn't be fetched) this
@@ -41,7 +40,9 @@ is indicated with an asterisk before the module's name.
 
 =head1 SYNOPSIS
 
-    cpandeps CPAN::FindDependencies 5.8.8
+    cpandeps CPAN::FindDependencies
+
+    cpandeps CPAN::FindDependencies perl 5.8.8 cachedir ../foo/bar
 
 =head1 WARNINGS, BUGS and FEEDBACK
 
