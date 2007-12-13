@@ -5,14 +5,12 @@ Makefile.PL
 MANIFEST
 README
 examples/cpandeps
-t/00-nometa.t
+t/00-nometa-nowarnings-fatalerrors-nocaching.t
 t/01-dependencies.t
-t/02-depth.t
-t/03-dependency-class.t
+t/02-maxdepth.t
 t/pod-coverage.t
 t/pod.t
 t/lib/chkenv.pm
-t/04-build_requires.t
 TODO
 t/cache/CPAN-FindDependencies-1.1/02packages.details.txt.gz
 t/cache/CPAN-FindDependencies-1.1/CPAN-1.9205.yml

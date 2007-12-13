@@ -1,3 +1,8 @@
+2.0     2007-12-13      Add caching;
+                        Uses cached data for testing, so tests are less
+                          fragile;
+                        Add maxdepth param
+
 1.99_01 2007-12-03      This version was a re-write;
                         No longer supports searching by distribution;
                         Switch to Parse::CPAN::Packages from CPAN.pm;

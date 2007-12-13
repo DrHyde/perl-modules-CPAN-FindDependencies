@@ -1,4 +1,4 @@
-# $Id: Dependency.pm,v 1.7 2007/12/03 17:46:47 drhyde Exp $
+# $Id: Dependency.pm,v 1.8 2007/12/13 15:16:03 drhyde Exp $
 #!perl -w
 package CPAN::FindDependencies::Dependency;
 
@@ -6,7 +6,7 @@ use strict;
 
 use vars qw($VERSION);
 
-$VERSION = '1.1';
+$VERSION = '2.0';
 
 =head1 NAME
 
@@ -58,15 +58,6 @@ How deeply nested this module is in the dependency tree
 =cut
 
 sub depth { return $_[0]->{depth} }
-
-=head2 incore
-
-Whether a sufficiently high version of this module can be found in
-the perl core that the user specified.
-
-=cut
-
-sub incore { return $_[0]->{incore} }
 
 =head2 warning
 

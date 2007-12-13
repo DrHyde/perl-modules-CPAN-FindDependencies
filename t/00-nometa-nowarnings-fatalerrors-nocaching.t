@@ -1,5 +1,5 @@
 #!perl -w
-# $Id: 00-nometa.t,v 1.8 2007/12/03 17:46:47 drhyde Exp $
+# $Id: 00-nometa-nowarnings-fatalerrors-nocaching.t,v 1.1 2007/12/13 15:16:03 drhyde Exp $
 use strict;
 
 use Test::More;

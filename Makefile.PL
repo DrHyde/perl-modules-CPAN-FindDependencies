@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.10 2007/12/13 13:42:11 drhyde Exp $
+# $Id: Makefile.PL,v 1.11 2007/12/13 15:16:03 drhyde Exp $
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
@@ -13,6 +13,6 @@ WriteMakefile(
         'YAML'                  => 0.61,
         'LWP::Simple'           => 1.41,
         'Scalar::Util'          => 1.14,
-        'URI::file'             => 4.19
+        'URI::file'             => 4.13
     }
 );

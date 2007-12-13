@@ -15,7 +15,7 @@ my @deps = CPAN::FindDependencies::finddeps(
     @ARGV
 );
 
-foreach my $dep (grep { !$_->incore() } @deps) {
+foreach my $dep (@deps) {
     print '  ' x $dep->depth();
     print '*' if($dep->warning());
     print $dep->name().' ('.$dep->distribution().")\n";
