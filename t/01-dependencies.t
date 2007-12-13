@@ -1,5 +1,5 @@
 #!perl -w
-# $Id: 01-dependencies.t,v 1.7 2007/12/03 17:46:47 drhyde Exp $
+# $Id: 01-dependencies.t,v 1.8 2007/12/13 13:42:11 drhyde Exp $
 use strict;
 
 use Test::More;
@@ -8,6 +8,11 @@ plan tests => 1;
 
 use CPAN::FindDependencies 'finddeps';
 
-ok((finddeps('CPAN', nowarnings => 1))[0]->name() eq 'CPAN',
-    "First entry in lists is the module itself");
+ok(
+    (finddeps(
+        'CPAN',
+        nowarnings => 1
+    ))[0]->name() eq 'CPAN',
+    "First entry in lists is the module itself"
+);
 # FIXME add more here

@@ -1,5 +1,5 @@
 #!perl -w
-# $Id: FindDependencies.pm,v 1.22 2007/12/12 23:57:35 drhyde Exp $
+# $Id: FindDependencies.pm,v 1.23 2007/12/13 13:42:11 drhyde Exp $
 
 package CPAN::FindDependencies;
 
@@ -72,14 +72,10 @@ specified, it defaults to 5.005.  Three part version numbers
 
 =item 02packages
 
-The location of CPAN.pm's C<02packages.details.txt.gz> file as a URL.
-To specify a local file, say something like
-C<file:///home/me/minicpan/02packages.details.txt.gz>.  This defaults
-to fetching it from a public CPAN mirror.  The file is fetched once,
-when the module loads.
-
-This is a URL because it is passed straight through to
-C<LWP::Simple::get>.
+The location of CPAN.pm's C<02packages.details.txt.gz> file as a
+local filename, with either a relative or an absolute path.  If not
+specified, it is fetched from a CPAN mirror instead.  The file is
+fetched just once.
 
 =item cachedir
 
@@ -120,10 +116,6 @@ be found and a warning will be spat out.
 
 Startup can be slow, especially if it needs to fetch the index from
 the interweb.
-
-The location of a local 02packages file is specified as a URL because
-of laziness.  Patches to translate from local paths to the necessary
-URL would be most welcome.
 
 =head1 FEEDBACK
 
@@ -213,7 +205,13 @@ sub _module2obj {
 sub _finddeps { return @{_finddeps_uncached(@_)}; }
 
 sub _get02packages {
-    get(shift() || DEFAULT02PACKAGES) ||
+    my $file = shift;
+    if($file) {
+        eval 'use URI::file';
+        die($@) if($@);
+        $file = URI::file->new_abs($file);
+    }
+    get($file || DEFAULT02PACKAGES) ||
         die(__PACKAGE__.": Couldn't fetch 02packages index file\n");
 }
 
