@@ -55,7 +55,7 @@ Bug reports should be made using L<http://rt.cpan.org/> or by email.
 
 L<CPAN::FindDependencies>
 
-L<http://cpandeps.cantrell.org.uk/>
+L<http://deps.cpantesters.org/>
 
 =head1 AUTHOR
 

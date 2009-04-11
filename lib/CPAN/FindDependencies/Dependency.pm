@@ -89,7 +89,7 @@ L<CPAN::FindDepdendencies>
 
 L<CPAN>
 
-L<http://cpandeps.cantrell.org.uk/>
+L<http://deps.cpantesters.org/>
 
 =head1 AUTHOR, LICENCE and COPYRIGHT
 

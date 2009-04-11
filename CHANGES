@@ -1,3 +1,5 @@
+2.1     2009-04-11      Add Ian Tegebo's patch to get deps from Makefile.PL
+
 2.0     2007-12-13      Add caching;
                         Uses cached data for testing, so tests are less
                           fragile;
