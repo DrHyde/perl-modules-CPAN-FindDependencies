@@ -8,6 +8,7 @@ use vars qw($VERSION @ISA @EXPORT_OK);
 
 use File::Temp qw(tempdir);
 use Cwd qw(getcwd abs_path);
+use Capture::Tiny qw(capture);
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -56,8 +57,8 @@ sub getreqs_from_mm {
     print $MKFH $MakefilePL;
     close($MKFH);
 
-    # execute ...
-    system($^X, 'Makefile.PL');
+    # execute, suppressing noise ...
+    capture { system($^X, 'Makefile.PL'); };
 
     # read Makefile
     open($MKFH, 'Makefile') || warn "Can't read Makefile\n";

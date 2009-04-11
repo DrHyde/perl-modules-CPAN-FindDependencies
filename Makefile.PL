@@ -13,6 +13,8 @@ WriteMakefile(
         'YAML'                  => 0.61,
         'LWP::Simple'           => 1.41,
         'Scalar::Util'          => 1.14,
-        'URI::file'             => 4.13
+        'URI::file'             => 4.13,
+        'File::Temp'            => 0.19,
+        'Capture::Tiny'         => 0.05,
     }
 );

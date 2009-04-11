@@ -1,3 +1,5 @@
+print "Random noise on STDOUT";
+print STDERR "Random noise on STDERR";
 use ExtUtils::MakeMaker;
 WriteMakefile(
 		NAME	=> 'Tie::Scalar::Decay',
