@@ -57,16 +57,14 @@ L<CPAN::FindDependencies>
 
 L<http://deps.cpantesters.org/>
 
-=head1 AUTHOR
+=head1 AUTHOR, LICENCE and COPYRIGHT
 
-David Cantrell E<lt>david@cantrell.org.ukE<gt>
+Copyright 2007 - 2009 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
 
-=head1 COPYRIGHT AND LICENCE
-
-Copyright 2007 David Cantrell
-
-This software is free-as-in-speech, and may be used, distributed
-and modified under the same conditions as perl itself.
+This software is free-as-in-speech software, and may be used,
+distributed, and modified under the terms of either the GNU
+General Public Licence version 2 or the Artistic Licence. It's
+up to you which one you use. The full text of the licences can
 
 =head1 CONSPIRACY
 
