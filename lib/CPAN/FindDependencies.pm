@@ -17,7 +17,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '2.0';
+$VERSION = '2.1';
 
 use constant DEFAULT02PACKAGES => 'http://www.cpan.org/modules/02packages.details.txt.gz';
 use constant MAXINT => ~0;
@@ -37,10 +37,10 @@ CPAN::FindDependencies - find dependencies for modules on the CPAN
 
 =head1 HOW IT WORKS
 
-The module uses the CPAN packages index to map modules to distributions
-and vice versa, and then fetches distributions' META.yml files from
-C<http://search.cpan.org/> to determine pre-requisites.  This means
-that a working interwebnet connection is required.
+The module uses the CPAN packages index to map modules to distributions and
+vice versa, and then fetches distributions' META.yml or Makefile.PL files from
+C<http://search.cpan.org/> to determine pre-requisites.  This means that a
+working interwebnet connection is required.
 
 =head1 FUNCTIONS
 
@@ -57,8 +57,8 @@ named parameters:
 
 =item nowarnings
 
-Warnings about modules where we can't find their META.yml, and so
-can't divine their pre-requisites, will be suppressed;
+Warnings about modules where we can't find their META.yml or Makefile.PL, and
+so can't divine their pre-requisites, will be suppressed;
 
 =item fatalerrors
 
@@ -81,8 +81,8 @@ fetched just once.
 =item cachedir
 
 A directory to use for caching.  It defaults to no caching.  Even if
-caching is turned on, this is only for META.yml files.  02packages is
-not cached - if you want to read that from a local disk, see the
+caching is turned on, this is only for META.yml or Makefile.PL files.
+02packages is not cached - if you want to read that from a local disk, see the
 C<02packages> option.
 
 =item maxdepth
@@ -90,6 +90,14 @@ C<02packages> option.
 Cuts off the dependency tree at the specified depth.  Your specified
 module is at depth 0, your dependencies at depth 1, their dependencies
 at depth 2, and so on.
+
+=item usemakefilepl
+
+If set to true, then for any module that doesn't have a META.yml,
+try to use its Makefile.PL as well.  Note that this involves
+downloading code from the Internet and running it.  This obviously
+opens you up to all kinds of bad juju, hence why it is disabled
+by default.
 
 =back
 
@@ -135,8 +143,8 @@ You must have web access to L<http://search.cpan.org/> and (unless
 you tell it where else to look for the index)
 L<http://www.cpan.org/>, or have all the data cached locally..
 If any
-META.yml files are missing, the distribution's dependencies will not
-be found and a warning will be spat out.
+META.yml or Makefile.PL files are missing, the distribution's dependencies will
+not be found and a warning will be spat out.
 
 Startup can be slow, especially if it needs to fetch the index from
 the interweb.
@@ -151,24 +159,27 @@ pass once I've fixed the bug
 Feature requests are far more likely to get implemented if you submit
 a patch yourself.
 
-=head1 CVS
+=head1 SOURCE CODE REPOSITORY
 
-L<http://drhyde.cvs.sourceforge.net/drhyde/perlmodules/CPAN-FindDependencies/>
+L<http://www.cantrell.org.uk/cgit/cgit.cgi/perlmodules/>
 
 =head1 SEE ALSO
 
 L<CPAN>
 
-L<http://cpandeps.cantrell.org.uk/>
+L<http://deps.cpantesters.org/>
 
 L<http://search.cpan.org>
 
 =head1 AUTHOR, LICENCE and COPYRIGHT
 
-Copyright 2007 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
+Copyright 2007 - 2009 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
 
-This module is free-as-in-speech software, and may be used,
-distributed, and modified under the same terms as Perl itself.
+This software is free-as-in-speech software, and may be used,
+distributed, and modified under the terms of either the GNU
+General Public Licence version 2 or the Artistic Licence. It's
+up to you which one you use. The full text of the licences can
+be found in the files GPL2.txt and ARTISTIC.txt, respectively.
 
 =head1 CONSPIRACY
 
@@ -304,42 +315,78 @@ sub _finddeps_uncached {
     ];
 }
 
-sub _getreqs {
+sub _get_file_cached {
     my %args = @_;
-    my($author, $distname, $opts) = @args{qw(
-        author distname opts
-    )};
-
-    my $yaml;
-    if(
-        $opts->{cachedir} &&
-        -d $opts->{cachedir} &&
-        -r $opts->{cachedir}."/$distname.yml"
-    ) {
-        open(my $yamlfh, $opts->{cachedir}."/$distname.yml") ||
-            _emitwarning('Error reading '.$opts->{cachedir}."/$distname.yml: $!");
+    my($src, $destfile, $opts) = @args{qw(src destfile opts)};
+    my $contents;
+    if($opts->{cachedir} && -d $opts->{cachedir} && -r $opts->{cachedir}."/$destfile") {
+        open(my $cachefh, $opts->{cachedir}."/$destfile") ||
+            _emitwarning('Error reading '.$opts->{cachedir}."/$destfile: $!");
         local $/ = undef;
-        $yaml = <$yamlfh>;
-        close($yamlfh);
+        $contents = <$cachefh>;
+        close($cachefh);
     } else {
-        $yaml = get("http://search.cpan.org/src/$author/$distname/META.yml");
-        if($yaml && $opts->{cachedir} && -d $opts->{cachedir}) {
-            open(my $yamlfh, '>', $opts->{cachedir}."/$distname.yml") ||
-                _emitwarning('Error writing '.$opts->{cachedir}."/$distname.yml: $!");
-            print $yamlfh $yaml;
-            close($yamlfh);
+        $contents = get($src);
+        if($contents && $opts->{cachedir} && -d $opts->{cachedir}) {
+            open(my $cachefh, '>', $opts->{cachedir}."/$destfile") ||
+                _emitwarning('Error writing '.$opts->{cachedir}."/$destfile: $!");
+            print $cachefh $contents;
+            close($cachefh);
         }
     }
+    return $contents;
+}
 
-    if(!$yaml) {
+sub _getreqs {
+    my %args = @_;
+    my($author, $distname, $opts) = @args{qw(author distname opts)};
+
+    # Prefer a META.yml, but if that's not found
+    #     add the warning to the 'warning stack', if there is one
+    # Try scanning the Makefile.PL if this is enabled
+    #     if found, remove the META.yml warning and return deps
+    # If neither is found, add warning to stack and return
+
+    my $yaml = _get_file_cached(
+        src => "http://search.cpan.org/src/$author/$distname/META.yml",
+        destfile => "$distname.yml",
+        opts => $opts
+    );
+    if ($yaml) {
+        my $yaml = eval { YAML::Load($yaml); };
+        if ($@ || !defined($yaml)) {
+            _emitwarning("$author/$distname: failed to parse META.yml", %{$opts})
+        } else {
+            $yaml->{requires} ||= {};
+            $yaml->{build_requires} ||= {};
+            return [%{$yaml->{requires}}, %{$yaml->{build_requires}}];
+        }
+    } else {
         _emitwarning("$author/$distname: no META.yml", %{$opts});
+    }
+        
+    # We could have failed to parse the META.yml, but we still want to try the Makefile.PL
+    if(!$opts->{usemakefilepl}) {
         return ['-warning', 'no META.yml'];
     } else {
-        my $yaml = eval { YAML::Load($yaml); };
-        return ['-warning', 'no META.yml'] if($@ || !defined($yaml));
-        $yaml->{requires} ||= {};
-        $yaml->{build_requires} ||= {};
-        return [%{$yaml->{requires}}, %{$yaml->{build_requires}}];
+        eval "use CPAN::FindDependencies::MakeMaker qw(getreqs_from_mm)";
+        my $makefilepl = _get_file_cached(
+            src => "http://search.cpan.org/src/$author/$distname/Makefile.PL",
+            destfile => "$distname.MakefilePL",
+            opts => $opts
+        );
+        if($makefilepl) {
+            my $result = getreqs_from_mm( $makefilepl );
+            if ('HASH' eq ref $result) {
+                return [ %{ $result } ];
+            } else {
+                _emitwarning("$author/$distname: $result", %{$opts});
+                return ['-warning', $result];
+            }
+        } else {
+            _emitwarning("$author/$distname: no META.yml nor Makefile.PL", %{$opts});
+            return ['-warning', 'no META.yml nor Makefile.PL'];
+        }
     }
 }
 
