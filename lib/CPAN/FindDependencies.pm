@@ -11,6 +11,7 @@ use LWP::Simple;
 use Module::CoreList;
 use Scalar::Util qw(blessed);
 use CPAN::FindDependencies::Dependency;
+use CPAN::FindDependencies::MakeMaker qw(getreqs_from_mm);
 use Parse::CPAN::Packages;
 
 require Exporter;
@@ -136,6 +137,12 @@ by paying attention to the depth of each object.
 
 The ordering of any particular module's immediate 'children' can be
 assumed to be random - it's actually hash key order.
+
+=head1 SECURITY
+
+If you set C<usemakefilepl> to a true value, this module may download code
+from the internet and execute it.  You should think carefully before enabling
+that feature.
 
 =head1 BUGS/WARNINGS/LIMITATIONS
 
@@ -369,14 +376,13 @@ sub _getreqs {
     if(!$opts->{usemakefilepl}) {
         return ['-warning', 'no META.yml'];
     } else {
-        eval "use CPAN::FindDependencies::MakeMaker qw(getreqs_from_mm)";
         my $makefilepl = _get_file_cached(
             src => "http://search.cpan.org/src/$author/$distname/Makefile.PL",
             destfile => "$distname.MakefilePL",
             opts => $opts
         );
         if($makefilepl) {
-            my $result = getreqs_from_mm( $makefilepl );
+            my $result = getreqs_from_mm($makefilepl);
             if ('HASH' eq ref $result) {
                 return [ %{ $result } ];
             } else {

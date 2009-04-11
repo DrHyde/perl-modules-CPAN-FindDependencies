@@ -1,16 +1,13 @@
 #!perl -w
-# TODO	Figure out how to recover from fatal errors inside the 'eval $MakefilePL' call.
+# TODO    Figure out how to recover from fatal errors inside the 'eval $MakefilePL' call.
 
 package CPAN::FindDependencies::MakeMaker;
 
 use strict;
-use vars qw($p $VERSION @ISA @EXPORT_OK);
+use vars qw($VERSION @ISA @EXPORT_OK);
 
-use Fatal qw( open close );
-
-my $DEBUG = 0; # For dev use
-
-my $MK_FH; # File handle to scalar $makefile_str
+use File::Temp qw(tempdir);
+use Cwd qw(getcwd abs_path);
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -36,104 +33,63 @@ Expects the contents of a Makefile.PL as a string.
 
 Returns a hash reference of the form:
 
-	{
-		Module::Name => 0.1,
-		...
-		Last::Module => 9.0,
-	}
+    {
+        Module::Name => 0.1,
+        ...
+        Last::Module => 9.0,
+    }
 
 =back
 
 =cut
 
 sub getreqs_from_mm {
-	my $MakefilePL = shift;
+    my $MakefilePL = shift;
+    local $/ = undef;
 
-	my $makefile_str;
-	my $mm_stdout = '';
-	my $mm_stderr = '';
-	open $MK_FH, ">", \$makefile_str;
+    my $cwd = getcwd();
+    my $tempdir = tempdir(CLEANUP => 1);
+    chdir($tempdir);
 
-	{
-		
-		local (*STDOUT, *STDERR);
-		open STDOUT, ">", \$mm_stdout;
-		open STDERR, ">", \$mm_stderr;
-	
-		require ExtUtils::MakeMaker;
-		
-		no warnings qw{redefine once}; # For parse_version, flush
+    # write Makefile.PL ...
+    open(my $MKFH, '>Makefile.PL') || die("Can't write Makefile.PL in $tempdir\n");
+    print $MKFH $MakefilePL;
+    close($MKFH);
 
-		# This is to keep MM from trying to eval modules that aren't there, and thus dying.
-		#	-I don't want to have to download/gunzip distributions just to parse the Makefile.
-		*ExtUtils::MM_Unix::parse_version = sub { };
-	
-		# This override is a slightly modified copy of the original
-		# whose purpose is to print the would-be Makefile into a scalar filehandle.
-		# 	We'll then parse that Makefile for prereqs.
-		*ExtUtils::MakeMaker::flush = \&_flush_to_mk_fh;
+    # execute ...
+    system($^X, 'Makefile.PL');
 
-		use warnings qw{redefine once};
+    # read Makefile
+    open($MKFH, 'Makefile') || warn "Can't read Makefile\n";
+    my $makefile_str = <$MKFH>;
+    close($MKFH);
+    chdir($cwd);
 
-		eval $MakefilePL;
-	
-		close STDOUT;
-		close STDERR;
-	}
-	
-	if ( $DEBUG ) {
-		warn "Problems extracting prereqs from Makefile.PL:\n$mm_stdout"
-			unless $mm_stdout =~ /Looks good/;
-		warn "ExtUtils::MakeMaker Warnings:\n$mm_stderr"
-			if $mm_stderr =~ /Warning/;
-	}
-
-	return _parse_makefile( $makefile_str );
+    return _parse_makefile( $makefile_str );
 }
 
 sub _parse_makefile {
-	my $makefile_str = shift;
-	return "Unable to get Makefile" unless defined $makefile_str;
-	my %required_version_for;
-	my @prereq_lines = grep { /^\s*#.*PREREQ/ } split /\n/, $makefile_str;
-	for my $line ( @prereq_lines ) {
-		if ( $line =~ /PREREQ_PM \s+ => \s+ \{ \s* (.*) \s* \} $/x ) {
-			no strict 'subs';
-			%required_version_for = eval "( $1 )";
-			return "Failed to eval $1: $@" if $@;
-			use strict 'subs';
-		} else {
-			return "Unrecognized PREREQ line in Makefile.PL:\n$line";
-		}
-	}
-	return \%required_version_for;
-}
-
-sub _flush_to_mk_fh {
-    my $self = shift;
-
-    my $finalname = $self->{MAKEFILE};
-    print STDOUT "Writing $finalname for $self->{NAME}\n";
-
-	no warnings 'once'; # for Is_VMS
-    unlink($finalname, "MakeMaker.tmp", $ExtUtils::MakeMaker::Is_VMS ? 'Descrip.MMS' : ());
-	use warnings 'once';
-
-    for my $chunk (@{$self->{RESULT}}) {
-		#print "$chunk\n";
-        print $MK_FH "$chunk\n";
-    }
-
-    my %keep = map { ($_ => 1) } qw(NEEDS_LINKING HAS_LINK_CODE);
-
-    if ($self->{PARENT} && !$self->{_KEEP_AFTER_FLUSH}) {
-        foreach (keys %$self) { # safe memory
-            delete $self->{$_} unless $keep{$_};
+    my $makefile_str = shift;
+    return "Unable to get Makefile" unless defined $makefile_str;
+    my %required_version_for;
+    my @prereq_lines = grep { /^\s*#.*PREREQ/ } split /\n/, $makefile_str;
+    for my $line ( @prereq_lines ) {
+        if ( $line =~ /PREREQ_PM \s+ => \s+ \{ \s* (.*) \s* \} $/x ) {
+            no strict 'subs';
+            %required_version_for = eval "( $1 )";
+            return "Failed to eval $1: $@" if $@;
+            use strict 'subs';
+        } else {
+            return "Unrecognized PREREQ line in Makefile.PL:\n$line";
         }
     }
+    return \%required_version_for;
+}
 
-    system("$Config::Config{eunicefix} $finalname") unless $Config::Config{eunicefix} eq ":";
-};
+=head1 SECURITY
+
+This module assumes that its input is trustworthy and can be safely
+executed.
 
 =head1 BUGS/LIMITATIONS
 
@@ -151,10 +107,14 @@ L<http://cpandeps.cantrell.org.uk/>
 
 =head1 AUTHOR, LICENCE and COPYRIGHT
 
-Copyright 2007 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
+Copyright 2009 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt> based largely
+on code by Ian Tegebo (see L<http://rt.cpan.org/Public/Bug/Display.html?id=34814>)
 
-This module is free-as-in-speech software, and may be used,
-distributed, and modified under the same terms as Perl itself.
+This software is free-as-in-speech software, and may be used,
+distributed, and modified under the terms of either the GNU
+General Public Licence version 2 or the Artistic Licence. It's
+up to you which one you use. The full text of the licences can
+be found in the files GPL2.txt and ARTISTIC.txt, respectively.
 
 =head1 CONSPIRACY
 

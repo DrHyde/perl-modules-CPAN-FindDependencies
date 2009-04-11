@@ -25,3 +25,7 @@ t/cache/CPAN-FindDependencies-1.1/Test-Simple-0.72.yml
 t/cache/CPAN-FindDependencies-1.1/YAML-0.66.yml
 t/cache/CPAN-FindDependencies-1.1/libwww-perl-5.808.yml
 lib/CPAN/FindDependencies/MakeMaker.pm
+t/03-makefilepl.t
+t/cache/Tie-Scalar-Decay-1.1.1/02packages.details.txt.gz
+t/cache/Tie-Scalar-Decay-1.1.1/Tie-Scalar-Decay-1.1.1.MakefilePL
+t/cache/Tie-Scalar-Decay-1.1.1/Time-HiRes-1.9719.yml
