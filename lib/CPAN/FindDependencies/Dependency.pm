@@ -6,7 +6,7 @@ use strict;
 
 use vars qw($VERSION);
 
-$VERSION = '2.0';
+$VERSION = '2.1';
 
 =head1 NAME
 
@@ -79,9 +79,9 @@ and bug reports.  The best bug reports include files that I can add
 to the test suite, which fail with the current code in CVS and will
 pass once I've fixed the bug
 
-=head1 CVS
+=head1 SOURCE CODE REPOSITORY
 
-L<http://drhyde.cvs.sourceforge.net/drhyde/perlmodules/CPAN-FindDependencies/>
+L<http://www.cantrell.org.uk/cgit/cgit.cgi/perlmodules/>
 
 =head1 SEE ALSO
 
@@ -95,8 +95,11 @@ L<http://cpandeps.cantrell.org.uk/>
 
 Copyright 2007 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
 
-This module is free-as-in-speech software, and may be used,
-distributed, and modified under the same terms as Perl itself.
+This software is free-as-in-speech software, and may be used,
+distributed, and modified under the terms of either the GNU
+General Public Licence version 2 or the Artistic Licence. It's
+up to you which one you use. The full text of the licences can
+be found in the files GPL2.txt and ARTISTIC.txt, respectively.
 
 =head1 CONSPIRACY
 

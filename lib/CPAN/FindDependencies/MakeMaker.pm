@@ -98,6 +98,10 @@ Makefile.PLs that have external dependencies/calls that can fatally die will
 not be able to be successfully parsed and then scanned for dependencies, e.g.
 libwww-perl.5808.
 
+=head1 SOURCE CODE REPOSITORY
+
+L<http://www.cantrell.org.uk/cgit/cgit.cgi/perlmodules/>
+
 =head1 SEE ALSO
 
 L<CPAN::FindDepdendencies>
