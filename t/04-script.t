@@ -2,7 +2,7 @@
 use strict;
 
 use Test::More;
-plan tests => 3;
+plan tests => 4;
 
 use Capture::Tiny qw(capture);
 
@@ -15,6 +15,7 @@ my($stdout, $stderr) = capture { system(
         cachedir t/cache/Tie-Scalar-Decay-1.1.1
     )
 )};
+is_deeply($stderr, '', "no errors reported");
 is_deeply($stdout, "*Tie::Scalar::Decay (D/DC/DCANTRELL/Tie-Scalar-Decay-1.1.1.tar.gz)\n",
     "got Tie::Scalar::Decay right not using Makefile.PL");
 
