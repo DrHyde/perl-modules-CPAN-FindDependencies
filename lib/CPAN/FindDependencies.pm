@@ -18,7 +18,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '2.1';
+$VERSION = '2.2';
 
 use constant DEFAULT02PACKAGES => 'http://www.cpan.org/modules/02packages.details.txt.gz';
 use constant MAXINT => ~0;
@@ -99,6 +99,10 @@ try to use its Makefile.PL as well.  Note that this involves
 downloading code from the Internet and running it.  This obviously
 opens you up to all kinds of bad juju, hence why it is disabled
 by default.
+
+=item recommended
+
+Adds recommended modules to the list of dependencies, if set to a true value.
 
 =back
 
@@ -187,6 +191,12 @@ distributed, and modified under the terms of either the GNU
 General Public Licence version 2 or the Artistic Licence. It's
 up to you which one you use. The full text of the licences can
 be found in the files GPL2.txt and ARTISTIC.txt, respectively.
+
+=head1 THANKS TO
+
+Ian Tegebo (for the code to extract deps from Makefile.PL)
+
+Georg Oechsler (for the code to also list 'recommended' modules)
 
 =head1 CONSPIRACY
 
@@ -366,7 +376,11 @@ sub _getreqs {
         } else {
             $yaml->{requires} ||= {};
             $yaml->{build_requires} ||= {};
-            return [%{$yaml->{requires}}, %{$yaml->{build_requires}}];
+            $yaml->{recommends} ||= {};
+            return [
+	        %{$yaml->{requires}}, %{$yaml->{build_requires}},
+		($opts->{recommended} ? %{$yaml->{recommends}} : ()),
+	    ];
         }
     } else {
         _emitwarning("$author/$distname: no META.yml", %{$opts});
