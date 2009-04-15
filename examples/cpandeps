@@ -2,8 +2,6 @@
 
 use strict;
 
-use CPAN::Config;
-
 eval "use CPAN::FindDependencies;";
 if($@) {
     print STDERR "Couldn't load CPAN::FindDependencies.\n";

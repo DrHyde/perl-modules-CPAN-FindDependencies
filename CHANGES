@@ -1,4 +1,8 @@
-2.2     2009-XX-XX      Add stuff to see 'recommended' modules, thanks to
+2.21    2009-04-15      Fix bug in cpandeps script - CPAN::Config might
+                          not exist, but wasn't being used anyway.  Thanks
+                          to Andreas Koenig
+
+2.2     2009-04-14      Add stuff to see 'recommended' modules, thanks to
                           Georg Oechsler
 
 2.1     2009-04-11      Add Ian Tegebo's patch to get deps from Makefile.PL
