@@ -76,8 +76,8 @@ None known
 
 I welcome feedback about my code, including constructive criticism
 and bug reports.  The best bug reports include files that I can add
-to the test suite, which fail with the current code in CVS and will
-pass once I've fixed the bug
+to the test suite, which fail with the current code in my git repo and
+will pass once I've fixed the bug
 
 =head1 SOURCE CODE REPOSITORY
 
