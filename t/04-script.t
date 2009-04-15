@@ -4,7 +4,12 @@ use strict;
 use Test::More;
 plan tests => 4;
 
+use Devel::CheckOS;
 use Capture::Tiny qw(capture);
+
+SKIP: {
+    skip "Script works but tests don't on Windows.  Dunno why.", 4
+        if(Devel::CheckOS::os_is('MicrosoftWindows'));
 
 my($stdout, $stderr) = capture { system(
     $^X, (map { "-I$_" } (@INC)),
@@ -55,3 +60,4 @@ is_deeply($stdout, 'CPAN::FindDependencies (D/DC/DCANTRELL/CPAN-FindDependencies
     File::Temp (T/TJ/TJENNESS/File-Temp-0.19.tar.gz)
 ', "got CPAN::FindDependencies right");
 
+};

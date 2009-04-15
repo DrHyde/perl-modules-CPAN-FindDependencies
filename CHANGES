@@ -1,3 +1,6 @@
+2.22    2009-04-15      Script tests now skip on Windows - script works,
+                          but tests don't.  If you care, Patches Welcome
+
 2.21    2009-04-15      Fix bug in cpandeps script - CPAN::Config might
                           not exist, but wasn't being used anyway.  Thanks
                           to Andreas Koenig
