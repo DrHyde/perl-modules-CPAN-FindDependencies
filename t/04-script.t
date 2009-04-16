@@ -6,13 +6,14 @@ plan tests => 4;
 
 use Devel::CheckOS;
 use Capture::Tiny qw(capture);
+use Config;
 
 SKIP: {
     skip "Script works but tests don't on Windows.  Dunno why.", 4
         if(Devel::CheckOS::os_is('MicrosoftWindows'));
 
 my($stdout, $stderr) = capture { system(
-    $^X, (map { "-I$_" } (@INC)),
+    $Config{perlpath}, (map { "-I$_" } (@INC)),
     qw(
         blib/script/cpandeps
         Tie::Scalar::Decay
@@ -25,7 +26,7 @@ is_deeply($stdout, "*Tie::Scalar::Decay (D/DC/DCANTRELL/Tie-Scalar-Decay-1.1.1.t
     "got Tie::Scalar::Decay right not using Makefile.PL");
 
 ($stdout, $stderr) = capture { system(
-    $^X, (map { "-I$_" } (@INC)),
+    $Config{perlpath}, (map { "-I$_" } (@INC)),
     qw(
         blib/script/cpandeps
         Tie::Scalar::Decay
@@ -39,7 +40,7 @@ is_deeply($stdout, 'Tie::Scalar::Decay (D/DC/DCANTRELL/Tie-Scalar-Decay-1.1.1.ta
 ', "got Tie::Scalar::Decay right using Makefile.PL");
 
 ($stdout, $stderr) = capture { system(
-    $^X, (map { "-I$_" } (@INC)),
+    $Config{perlpath}, (map { "-I$_" } (@INC)),
     qw(
         blib/script/cpandeps
         CPAN::FindDependencies

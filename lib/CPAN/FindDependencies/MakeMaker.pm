@@ -9,6 +9,7 @@ use vars qw($VERSION @ISA @EXPORT_OK);
 use File::Temp qw(tempdir);
 use Cwd qw(getcwd abs_path);
 use Capture::Tiny qw(capture);
+use Config;
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -59,11 +60,18 @@ sub getreqs_from_mm {
 
     # execute, suppressing noise ...
     eval { capture {
-	local $SIG{ALRM} = sub { die("Makefile.PL didn't finish in a reasonable time\n"); };
-	alarm(5); # put this in a Safe compartment so can't turn this off?
-	# FIXME fork, exec, kill on ALRM
-        system($^X, 'Makefile.PL');
-	alarm(0);
+        if(my $pid = fork()) { # parent
+            local $SIG{ALRM} = sub {
+                kill 9, $pid; # quit RIGHT FUCKING NOW
+                die("Makefile.PL didn't finish in a reasonable time\n");
+            };
+            alarm(5);
+            waitpid($pid, 0);
+            alarm(0);
+        } else {
+            # FIXME fork, exec, kill on ALRM
+            exec($Config{perlpath}, 'Makefile.PL');
+        }
     } };
     return $@ if($@);
 

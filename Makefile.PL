@@ -17,5 +17,6 @@ WriteMakefile(
         'File::Temp'            => 0.19,
         'Capture::Tiny'         => 0.05,
         'Devel::CheckOS'        => 1.52,
+        'IPC::Run'              => 0.82,
     }
 );
