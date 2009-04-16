@@ -69,7 +69,6 @@ sub getreqs_from_mm {
             waitpid($pid, 0);
             alarm(0);
         } else {
-            # FIXME fork, exec, kill on ALRM
             exec($Config{perlpath}, 'Makefile.PL');
         }
     } };
