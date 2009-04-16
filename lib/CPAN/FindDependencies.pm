@@ -1,5 +1,4 @@
 #!perl -w
-# $Id: FindDependencies.pm,v 1.24 2007/12/13 15:16:03 drhyde Exp $
 
 package CPAN::FindDependencies;
 
