@@ -1,3 +1,5 @@
+2.3     2009-XX-XX      Makefile.PL now times out
+
 2.22    2009-04-15      Script tests now skip on Windows - script works,
                           but tests don't.  If you care, Patches Welcome
 
