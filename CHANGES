@@ -1,3 +1,8 @@
+2.31    2009-04-24      Update version dependency on Parse::CPAN::Packages
+                          to avoid a bug in its interaction with the latest
+                          Moose
+                        Switch from YAML to YAML::Tiny
+
 2.3     2009-04-16      Makefile.PL now times out
 
 2.22    2009-04-15      Script tests now skip on Windows - script works,

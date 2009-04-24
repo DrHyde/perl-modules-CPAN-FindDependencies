@@ -5,7 +5,7 @@ package CPAN::FindDependencies;
 use strict;
 use vars qw($p $VERSION @ISA @EXPORT_OK);
 
-use YAML ();
+use YAML::Tiny ();
 use LWP::Simple;
 use Module::CoreList;
 use Scalar::Util qw(blessed);
@@ -17,7 +17,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '2.3';
+$VERSION = '2.31';
 
 use constant DEFAULT02PACKAGES => 'http://www.cpan.org/modules/02packages.details.txt.gz';
 use constant MAXINT => ~0;
@@ -369,7 +369,7 @@ sub _getreqs {
         opts => $opts
     );
     if ($yaml) {
-        my $yaml = eval { YAML::Load($yaml); };
+        my $yaml = eval { YAML::Tiny::Load($yaml); };
         if ($@ || !defined($yaml)) {
             _emitwarning("$author/$distname: failed to parse META.yml", %{$opts})
         } else {
