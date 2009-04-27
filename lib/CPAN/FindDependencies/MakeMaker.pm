@@ -15,7 +15,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw( getreqs_from_mm );
 
-$VERSION = '0.2';
+$VERSION = '0.3';
 
 =head1 NAME
 
@@ -72,7 +72,10 @@ sub getreqs_from_mm {
             exec($Config{perlpath}, 'Makefile.PL');
         }
     } };
-    return $@ if($@);
+    if($@) {
+        chdir($cwd);
+	return $@;
+    }
 
     # read Makefile
     open($MKFH, 'Makefile') || warn "Can't read Makefile\n";
