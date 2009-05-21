@@ -21,6 +21,7 @@ WriteMakefile(
         'Devel::CheckOS'        => 1.52,
     },
     dist => {
+        DIST_CP => 'cp',
         PREOP => "$Config{perlpath} -Mstrict -Mlib::CPAN::FindDependencies -w shared/doincludes \$(EXE_FILES) \$(TO_INST_PM)"
     }
 );

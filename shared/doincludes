@@ -1,6 +1,4 @@
-foreach my $file (map {
-    "CPAN-FindDependencies-$CPAN::FindDependencies::VERSION/".$_
-} @ARGV) {
+foreach my $file (map { "CPAN-FindDependencies-$CPAN::FindDependencies::VERSION/$_" } @ARGV) {
     print "Looking for includes in $file\n";
     open(FOO, $file);
     my @contents = <FOO>;
