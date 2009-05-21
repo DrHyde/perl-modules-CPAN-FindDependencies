@@ -2,8 +2,6 @@
 use ExtUtils::MakeMaker;
 use Config;
 
-use lib::CPAN::FindDependencies;
-
 WriteMakefile(
     NAME         => 'CPAN::FindDependencies',
     VERSION_FROM => 'lib/CPAN/FindDependencies.pm',
@@ -23,28 +21,7 @@ WriteMakefile(
         'Devel::CheckOS'        => 1.52,
     },
     dist => {
-        PREOP => join(' ', split(/[\n\r]+/, qq[
-	    $Config{perlpath} -e '
-	        undef \$\$/;
-	        foreach my \$\$file (map { "CPAN-FindDependencies-$CPAN::FindDependencies::VERSION/".\$\$_ } qw(\$(EXE_FILES) \$(TO_INST_PM))) {
-		    my \$\$contents = <FOO>;
-		    close(FOO);
-
-		    \$\$contents =~ s/\\#include (.*)/
-			print "Including \$\$1\\n";
-		        open(FOO, \$\$1);
-			\$\$include = <FOO>;
-			close(FOO);
-			\$\$include;
-		    /ge;
-
-		    \\# open(FOO, ">\$\$file");
-		    \\# print FOO \$\$contents;
-		    \\# close(FOO);
-		    print \$\$contents;
-		}
-	    '
-	]))
+        PREOP => "$Config{perlpath} -Mstrict -Mlib::CPAN::FindDependencies -w shared/doincludes \$(EXE_FILES) \$(TO_INST_PM)"
     }
 );
 
