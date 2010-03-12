@@ -17,7 +17,7 @@ CPAN::FindDependencies::Dependency - object representing a module dependency
     my @dependencies = CPAN::FindDependencies::finddeps("CPAN");
     foreach my $dep (@dependencies) {
         print ' ' x $dep->depth();
-        print $dep->name().' ('.$dep->distribution().")\n";
+        print $dep->name().' (dist: '.$dep->distribution().', mod ver: '.$dep->version().")\n";
     }
 
 =head1 METHODS
@@ -49,6 +49,16 @@ The name of the distribution containing the module
 
 sub distribution {
     $_[0]->{p}->package($_[0]->name())->distribution()->prefix();
+}
+
+=head2 version
+
+The minimum required version (if specified) of the module
+
+=cut
+
+sub version {
+  $_[0]->{version}
 }
 
 =head2 depth

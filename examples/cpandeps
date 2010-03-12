@@ -7,8 +7,15 @@ if($@) {
     print STDERR "Couldn't load CPAN::FindDependencies.\n";
 }
 
+my $showversion;
+if($ARGV[0] eq '--showmoduleversions') {
+  $showversion = 1;
+  shift;
+}
+
+my $target = shift;
 my @deps = CPAN::FindDependencies::finddeps(
-    shift,
+    $target,
     nowarnings => 1,
     @ARGV
 );
@@ -16,7 +23,9 @@ my @deps = CPAN::FindDependencies::finddeps(
 foreach my $dep (@deps) {
     print '  ' x $dep->depth();
     print '*' if($dep->warning());
-    print $dep->name().' ('.$dep->distribution().")\n";
+    print $dep->name().' (dist: '.$dep->distribution();
+    print ', mod ver: '.$dep->version() if($showversion && $dep->name() ne $target);
+    print ")\n";
 }
 
 =head1 NAME
@@ -33,6 +42,8 @@ This program is a simple wrapper around CPAN::FindDependencies.
 
     cpandeps CPAN::FindDependencies perl 5.8.8 cachedir ../foo/bar
 
+    cpandeps --showmoduleversions CPAN::FindDependencies
+
 Given a module name, this program will show you the module's
 dependency tree.  It takes exactly the same arguments as the
 C<finddeps> function of CPAN::FindDependencies, with the exception
@@ -41,6 +52,16 @@ that C<nowarnings> is turned *on* by default.
 =over
 
 #include shared/parameters
+
+=back
+
+It also takes the following extra parameter, which must be the first one:
+
+=over
+
+=item --showmoduleversions
+
+If present, the required version of each module is also shown
 
 =back
 
