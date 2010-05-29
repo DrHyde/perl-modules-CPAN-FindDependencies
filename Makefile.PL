@@ -1,4 +1,3 @@
-# $Id: Makefile.PL,v 1.11 2007/12/13 15:16:03 drhyde Exp $
 use ExtUtils::MakeMaker;
 use Config;
 
@@ -26,9 +25,10 @@ WriteMakefile(
     }
 );
 
-package MY;
-sub test {
-    my $text = shift->SUPER::test(@_);
-    $text =~ s/\t(.*test_harness)/\tHARNESS_OPTIONS=j8 $1/;
-    $text;
-}
+# commented out cos doesn't work on Doze
+# package MY;
+# sub test {
+#     my $text = shift->SUPER::test(@_);
+#     $text =~ s/\t(.*test_harness)/\tHARNESS_OPTIONS=j8 $1/;
+#     $text;
+# }
