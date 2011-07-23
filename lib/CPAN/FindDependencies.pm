@@ -130,7 +130,7 @@ a patch yourself.
 
 =head1 SOURCE CODE REPOSITORY
 
-L<http://www.cantrell.org.uk/cgit/cgit.cgi/perlmodules/>
+L<git://github.com/DrHyde/perl-modules-CPAN-FindDependencies.git>
 
 =head1 SEE ALSO
 
