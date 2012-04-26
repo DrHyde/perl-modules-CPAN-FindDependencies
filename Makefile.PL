@@ -3,6 +3,12 @@ use Config;
 
 WriteMakefile(
     NAME         => 'CPAN::FindDependencies',
+    META_MERGE => {
+        license => 'other',
+        resource => {
+	    repository => 'https://github.com/DrHyde/perl-modules-CPAN-FindDependencies'
+        }
+    },
     VERSION_FROM => 'lib/CPAN/FindDependencies.pm',
     EXE_FILES    => [qw(
         examples/cpandeps
