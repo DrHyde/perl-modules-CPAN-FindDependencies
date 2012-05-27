@@ -1,4 +1,4 @@
-CHANGES
+CHANGELOG
 lib/CPAN/FindDependencies.pm
 lib/CPAN/FindDependencies/Dependency.pm
 Makefile.PL
