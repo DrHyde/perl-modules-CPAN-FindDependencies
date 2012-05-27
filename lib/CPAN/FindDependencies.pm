@@ -6,7 +6,7 @@ use strict;
 use vars qw($p $VERSION @ISA @EXPORT_OK);
 
 use YAML::Tiny ();
-use LWP::Simple;
+use LWP::UserAgent;
 use Module::CoreList;
 use Scalar::Util qw(blessed);
 use CPAN::FindDependencies::Dependency;
@@ -17,7 +17,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '2.34';
+$VERSION = '2.4';
 
 use constant DEFAULT02PACKAGES => 'http://www.cpan.org/modules/02packages.details.txt.gz';
 use constant MAXINT => ~0;
@@ -142,7 +142,7 @@ L<http://search.cpan.org>
 
 =head1 AUTHOR, LICENCE and COPYRIGHT
 
-Copyright 2007 - 2010 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
+Copyright 2007 - 2012 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
 
 This software is free-as-in-speech software, and may be used,
 distributed, and modified under the terms of either the GNU
@@ -224,8 +224,20 @@ sub _get02packages {
         die($@) if($@);
         $file = URI::file->new_abs($file);
     }
-    get($file || DEFAULT02PACKAGES) ||
+    _get($file || DEFAULT02PACKAGES) ||
         die(__PACKAGE__.": Couldn't fetch 02packages index file\n");
+}
+
+sub _get {
+    my $url = shift;
+    my $ua = LWP::UserAgent->new();
+    $ua->agent(__PACKAGE__."/$VERSION");
+    my $response = $ua->get($url);
+    if($response->is_success()) {
+        return $response->content();
+    } else {
+        return undef;
+    }
 }
 
 sub _incore {
@@ -304,7 +316,7 @@ sub _get_file_cached {
         $contents = <$cachefh>;
         close($cachefh);
     } else {
-        $contents = get($src);
+        $contents = _get($src);
         if($contents && $opts->{cachedir} && -d $opts->{cachedir}) {
             open(my $cachefh, '>', $opts->{cachedir}."/$destfile") ||
                 _emitwarning('Error writing '.$opts->{cachedir}."/$destfile: $!");
