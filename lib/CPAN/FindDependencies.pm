@@ -17,7 +17,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '2.4';
+$VERSION = '2.41';
 
 use constant DEFAULT02PACKAGES => 'http://www.cpan.org/modules/02packages.details.txt.gz';
 use constant MAXINT => ~0;
@@ -157,6 +157,8 @@ Brian Phillips (for the code to report on required versions of modules)
 Ian Tegebo (for the code to extract deps from Makefile.PL)
 
 Georg Oechsler (for the code to also list 'recommended' modules)
+
+Jonathan Stowe (for making it work through HTTP proxies)
 
 =head1 CONSPIRACY
 

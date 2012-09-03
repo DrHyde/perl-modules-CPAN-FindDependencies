@@ -1,3 +1,5 @@
+2.41    XXXX-XX-XX      Patched to work through HTTP proxies
+
 2.4     2012-05-27      Fix for RT 65001, 02packages being corrupted
                           by LWP::Simple::get being too damned clever
                           for its own good
