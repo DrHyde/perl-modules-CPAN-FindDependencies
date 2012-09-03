@@ -231,6 +231,7 @@ sub _get02packages {
 sub _get {
     my $url = shift;
     my $ua = LWP::UserAgent->new();
+    $ua->env_proxy();
     $ua->agent(__PACKAGE__."/$VERSION");
     my $response = $ua->get($url);
     if($response->is_success()) {
