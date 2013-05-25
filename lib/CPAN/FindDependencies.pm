@@ -304,7 +304,7 @@ sub _finddeps_uncached {
                 seen    => $seen,
                 version => $reqs{$_}
             );
-        } keys %reqs) : ()
+        } sort keys %reqs) : ()
     ];
 }
 
