@@ -1,3 +1,6 @@
+use blib;
+use CPAN::FindDependencies;
+
 foreach my $file (map { "CPAN-FindDependencies-$CPAN::FindDependencies::VERSION/$_" } @ARGV) {
     print "Looking for includes in $file\n";
     open(FOO, $file);
