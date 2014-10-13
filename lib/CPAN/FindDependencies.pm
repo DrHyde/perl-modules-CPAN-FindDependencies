@@ -194,7 +194,7 @@ sub finddeps {
     }
 
     my $version;
-    if ($opts{version}) {
+    if (!defined($opts{version})) {
         $version = $opts{version};
     }
     elsif ($p->package($module)) {
