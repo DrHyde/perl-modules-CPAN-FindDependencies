@@ -209,7 +209,7 @@ sub finddeps {
         opts    => \%opts,
         target  => $module,
         seen    => {},
-        version => $version,
+        version => $version
     );
 }
 
