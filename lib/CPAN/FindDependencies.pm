@@ -68,6 +68,10 @@ useful methods are:
 
 The module's name;
 
+=item version
+
+An optional specified module version;
+
 =item distribution
 
 The distribution containing this module;
@@ -189,11 +193,23 @@ sub finddeps {
         $p = Parse::CPAN::Packages->new(_get02packages($opts{'02packages'}));
     }
 
+    my $version;
+    if ($opts{version}) {
+        $version = $opts{version};
+    }
+    elsif ($p->package($module)) {
+        $version = $p->package($module);
+    }
+    else
+    {
+        $version = 0;
+    }
+
     return _finddeps(
         opts    => \%opts,
         target  => $module,
         seen    => {},
-        version => ($p->package($module) ? $p->package($module)->version() : 0)
+        version => $version,
     );
 }
 
@@ -361,7 +377,7 @@ sub _getreqs {
     } else {
         _emitwarning("$author/$distname: no META.yml", %{$opts});
     }
-        
+
     # We could have failed to parse the META.yml, but we still want to try the Makefile.PL
     if(!$opts->{usemakefilepl}) {
         return ['-warning', 'no META.yml'];
