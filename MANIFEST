@@ -40,3 +40,4 @@ shared/parameters
 ARTISTIC.txt
 GPL2.txt
 shared/doincludes
+MANIFEST.SKIP
