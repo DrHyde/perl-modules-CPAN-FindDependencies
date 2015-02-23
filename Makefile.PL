@@ -6,12 +6,8 @@ WriteMakefile(
   META_MERGE => {
     license => 'other',
     resources => {
-      repository => {
-        web => 'https://github.com/DrHyde/perl-modules-CPAN-FindDependencies'
-      },
-      bugtracker => {
-        web => 'https://github.com/DrHyde/perl-modules-CPAN-FindDependencies/issues/new'
-      },
+      repository => 'https://github.com/DrHyde/perl-modules-CPAN-FindDependencies',
+      bugtracker => 'https://github.com/DrHyde/perl-modules-CPAN-FindDependencies/issues'
     },
   },
   VERSION_FROM => 'lib/CPAN/FindDependencies.pm',
