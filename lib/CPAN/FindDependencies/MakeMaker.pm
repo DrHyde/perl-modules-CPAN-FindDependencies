@@ -58,23 +58,33 @@ sub getreqs_from_mm {
     print $MKFH $MakefilePL;
     close($MKFH);
 
-    # execute, suppressing noise ...
-    eval { capture {
-        if(my $pid = fork()) { # parent
-            local $SIG{ALRM} = sub {
-                kill 9, $pid; # quit RIGHT FUCKING NOW
-                die("Makefile.PL didn't finish in a reasonable time\n");
-            };
-            alarm(5);
-            waitpid($pid, 0);
-            alarm(0);
-        } else {
-            exec($Config{perlpath}, 'Makefile.PL');
+    if ($^O eq 'MSWin32') {
+        require Win32::Job;
+        my $job = Win32::Job->new;
+        $job->spawn($Config{perlpath}, "perl Makefile.PL", {stdin  => 'NUL', 'stdout'=>'stdout.log','stderr'=>'stderr.log'});
+        unless ($job->run(10)) {
+            chdir($cwd);
+            return "Makefile.PL didn't finish in a reasonable time\n";
         }
-    } };
-    if($@) {
-        chdir($cwd);
-	return $@;
+    } else {
+        # execute, suppressing noise ...
+        eval { capture {
+            if(my $pid = fork()) { # parent
+                local $SIG{ALRM} = sub {
+                    kill 9, $pid; # quit RIGHT FUCKING NOW
+                    die("Makefile.PL didn't finish in a reasonable time\n");
+                };
+                alarm(5);
+                waitpid($pid, 0);
+                alarm(0);
+            } else {
+                exec($Config{perlpath}, 'Makefile.PL');
+            }
+        } };
+        if($@) {
+            chdir($cwd);
+            return $@;
+        }
     }
 
     # read Makefile
