@@ -17,7 +17,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '2.42';
+$VERSION = '2.43';
 
 use constant DEFAULT02PACKAGES => 'http://www.cpan.org/modules/02packages.details.txt.gz';
 use constant MAXINT => ~0;
@@ -142,7 +142,7 @@ L<http://search.cpan.org>
 
 =head1 AUTHOR, LICENCE and COPYRIGHT
 
-Copyright 2007 - 2012 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
+Copyright 2007 - 2015 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
 
 This software is free-as-in-speech software, and may be used,
 distributed, and modified under the terms of either the GNU
@@ -151,6 +151,8 @@ up to you which one you use. The full text of the licences can
 be found in the files GPL2.txt and ARTISTIC.txt, respectively.
 
 =head1 THANKS TO
+
+Alexandr Ciornii (for a patch to stop it segfaulting on Windows)
 
 Brian Phillips (for the code to report on required versions of modules)
 
