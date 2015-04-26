@@ -24,6 +24,7 @@ WriteMakefile(
     'File::Temp'            => 0.19,
     'Capture::Tiny'         => 0.05,
     'Devel::CheckOS'        => 1.52,
+    $^O eq 'MSWin32' ? ('Win32::Job' => 0,) : (),
   },
   dist => {
     DIST_CP => 'cp',
