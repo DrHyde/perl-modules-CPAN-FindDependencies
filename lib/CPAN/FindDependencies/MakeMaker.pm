@@ -59,6 +59,7 @@ sub getreqs_from_mm {
     close($MKFH);
 
     if ($^O eq 'MSWin32') {
+        # NB *not* for Cygwin, hence not Devel::CheckOS MicrosoftWindows
         require Win32::Job;
         my $job = Win32::Job->new;
         $job->spawn($Config{perlpath}, "perl Makefile.PL", {stdin  => 'NUL', 'stdout'=>'stdout.log','stderr'=>'stderr.log'});
