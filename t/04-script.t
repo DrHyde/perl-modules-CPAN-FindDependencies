@@ -33,11 +33,14 @@ my($stdout, $stderr) = capture { system(
 $stderr = join("\n", grep {
     $_ !~ /
         ^
-	(
-	    Subroutine.File::Slurp::O_(RDWR|CREAT|EXCL).redefined |
-	    v-string.in.use\/require.non-portable
-	)
-	.*File\/Slurp.pm
+        (
+            (
+                Subroutine.File::Slurp::O_(RDWR|CREAT|EXCL).redefined |
+                v-string.in.use\/require.non-portable |
+            )
+            .*File\/Slurp.pm
+        ) |
+        Devel::Hide.*Test.Pod
     /x
 } split(/[\r\n]+/, $stderr));
 
