@@ -36,7 +36,7 @@ $stderr = join("\n", grep {
         (
             (
                 Subroutine.File::Slurp::O_(RDWR|CREAT|EXCL).redefined |
-                v-string.in.use\/require.non-portable |
+                v-string.in.use\/require.non-portable
             )
             .*File\/Slurp.pm
         ) |
