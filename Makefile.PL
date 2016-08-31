@@ -17,7 +17,7 @@ WriteMakefile(
   PREREQ_PM    => {
     'Parse::CPAN::Packages' => 2.31,
     'Module::CoreList'      => 2.90,
-    'YAML::Tiny'            => 1.36,
+    'YAML::Tiny'            => 1.57,
     'LWP::UserAgent'        => 0,
     'Scalar::Util'          => 1.14,
     'URI::file'             => 4.13,
