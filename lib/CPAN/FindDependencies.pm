@@ -17,7 +17,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '2.44';
+$VERSION = '2.45';
 
 use constant DEFAULT02PACKAGES => 'http://www.cpan.org/modules/02packages.details.txt.gz';
 use constant MAXINT => ~0;
@@ -151,6 +151,8 @@ up to you which one you use. The full text of the licences can
 be found in the files GPL2.txt and ARTISTIC.txt, respectively.
 
 =head1 THANKS TO
+
+Stephan Loyd (for fixing problems with some META.yml files)
 
 Alexandr Ciornii (for a patch to stop it segfaulting on Windows)
 
