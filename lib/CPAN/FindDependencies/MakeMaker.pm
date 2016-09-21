@@ -15,7 +15,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw( getreqs_from_mm );
 
-$VERSION = '0.3';
+$VERSION = '1.0';
 
 =head1 NAME
 

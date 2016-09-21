@@ -1,3 +1,7 @@
+2.46    2016-09-21      Increase timeout for running Makefile.PL, to
+                          cope with really slow machines with pitiful
+                          I/O
+
 2.45    2016-09-07      No functional changes, bump the required version
                           of YAML::Tiny to cope with some modern META.yml
                           files
