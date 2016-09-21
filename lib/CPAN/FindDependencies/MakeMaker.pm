@@ -75,7 +75,7 @@ sub getreqs_from_mm {
                     kill 9, $pid; # quit RIGHT FUCKING NOW
                     die("Makefile.PL didn't finish in a reasonable time\n");
                 };
-                alarm(5);
+                alarm(10);
                 waitpid($pid, 0);
                 alarm(0);
             } else {
