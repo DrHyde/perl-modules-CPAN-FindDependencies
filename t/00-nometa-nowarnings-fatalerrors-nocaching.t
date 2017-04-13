@@ -1,9 +1,18 @@
 #!perl -w
-# $Id: 00-nometa-nowarnings-fatalerrors-nocaching.t,v 1.1 2007/12/13 15:16:03 drhyde Exp $
 use strict;
 
 use Test::More;
-require 't/lib/chkenv.pm';
+
+use LWP::Simple;
+
+unless(
+    head("http://search.cpan.org/~dcantrell/") &&
+    head("http://www.cpan.org/modules/02packages.details.txt.gz")
+) {
+    plan skip_all => "Need web access to the CPAN";
+    exit;
+}
+
 plan tests => 5;
 
 use_ok('CPAN::FindDependencies', 'finddeps');

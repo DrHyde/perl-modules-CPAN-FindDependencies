@@ -1,3 +1,5 @@
+2.47    2017-04-13      Make tests pass on perl 5.26
+
 2.46    2016-09-21      Increase timeout for running Makefile.PL, to
                           cope with really slow machines with pitiful
                           I/O
