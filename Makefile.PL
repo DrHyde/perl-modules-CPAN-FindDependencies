@@ -4,7 +4,7 @@ use Config;
 WriteMakefile(
   NAME         => 'CPAN::FindDependencies',
   META_MERGE => {
-    license => 'other',
+    license => 'open_source',
     resources => {
       repository => 'https://github.com/DrHyde/perl-modules-CPAN-FindDependencies',
       bugtracker => 'https://github.com/DrHyde/perl-modules-CPAN-FindDependencies/issues'
