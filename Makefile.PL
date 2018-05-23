@@ -1,6 +1,20 @@
 use ExtUtils::MakeMaker;
 use Config;
 
+if($ENV{RELEASE_TESTING}) {
+    opendir(T, 't') || die("Can't read t/ directory: $!\n");
+    my @tests = grep { -f "t/$_" } readdir(T);
+    closedir(T);
+    foreach my $test (@tests) {
+        open(IN, "t/$test") || die("Can't read t/$test: $!\n");
+        open(OUT, ">t/XX-$test") || die("Can't write t/XX-$test: $!\n");
+        print OUT "use Devel::Hide qw(LWP::Protocol::https);\n";
+        print OUT <IN>;
+        close(OUT);
+        close(IN);
+    }
+}
+
 WriteMakefile(
   NAME         => 'CPAN::FindDependencies',
   META_MERGE => {
