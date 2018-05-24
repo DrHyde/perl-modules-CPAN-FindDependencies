@@ -1,7 +1,5 @@
 language: perl
-env:
-  - PERL_USE_UNSAFE_INC=0
-  - RELEASE_TESTING=1
+env: PERL_USE_UNSAFE_INC=0 RELEASE_TESTING=1
 perl:
   - "5.10"
   - "5.12"
@@ -17,5 +15,6 @@ matrix:
     - perl: 5.20
       env: COVERAGE=1
 before_install:
+  - cpanm --notest Devel::Hide
   - eval $(curl https://travis-perl.github.io/init) --auto
 sudo: false
