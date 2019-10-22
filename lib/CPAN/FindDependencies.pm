@@ -357,9 +357,11 @@ sub _getreqs {
             $yaml->{requires} ||= {};
             $yaml->{build_requires} ||= {};
             $yaml->{recommends} ||= {};
+            $yaml->{configure_requires} ||= {};
             return [
 	        %{$yaml->{requires}}, %{$yaml->{build_requires}},
 		($opts->{recommended} ? %{$yaml->{recommends}} : ()),
+		($opts->{configreqs} ? %{$yaml->{configure_requires}} : ()),
 	    ];
         }
     } else {
