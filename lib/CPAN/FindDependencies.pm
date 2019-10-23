@@ -1,8 +1,7 @@
-#!perl -w
-
 package CPAN::FindDependencies;
 
 use strict;
+use warnings;
 use vars qw($p $VERSION @ISA @EXPORT_OK);
 
 use YAML::Tiny ();
@@ -17,7 +16,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '2.48';
+$VERSION = '2.49';
 
 use constant DEFAULT02PACKAGES => 'http://www.cpan.org/modules/02packages.details.txt.gz';
 use constant MAXINT => ~0;
@@ -142,7 +141,7 @@ L<http://metacpan.org>
 
 =head1 AUTHOR, LICENCE and COPYRIGHT
 
-Copyright 2007 - 2015 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
+Copyright 2007 - 2019 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
 
 This software is free-as-in-speech software, and may be used,
 distributed, and modified under the terms of either the GNU
@@ -163,6 +162,8 @@ Ian Tegebo (for the code to extract deps from Makefile.PL)
 Georg Oechsler (for the code to also list 'recommended' modules)
 
 Jonathan Stowe (for making it work through HTTP proxies)
+
+Kenneth Olwing (for support for 'configure_requires')
 
 =head1 CONSPIRACY
 
