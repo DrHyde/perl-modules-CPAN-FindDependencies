@@ -40,3 +40,4 @@ ARTISTIC.txt
 GPL2.txt
 shared/doincludes
 MANIFEST.SKIP
+t/06-configure.t
