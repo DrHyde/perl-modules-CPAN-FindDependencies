@@ -117,6 +117,10 @@ not be found and a warning will be spat out.
 Startup can be slow, especially if it needs to fetch the index from
 the interweb.
 
+Dynamic dependencies - for example, dependencies that only apply on some
+platforms - can't be reliably resolved. They *may* be resolved if you use the
+unsafe Makefile.PL, but even that can't be relied on.
+
 =head1 FEEDBACK
 
 I welcome feedback about my code, including constructive criticism
