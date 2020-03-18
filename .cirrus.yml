@@ -17,6 +17,7 @@ task:
   test_script:
     - echo|cpan App::cpanminus
     - /Users/anka/perl5/bin/cpanm --installdeps .
+    - export PERL5LIB=/Users/anka/perl5/lib/perl5
     - perl Makefile.PL
     - make
     - make test
