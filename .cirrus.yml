@@ -1,0 +1,22 @@
+task:
+  name: FreeBSD
+  freebsd_instance:
+    image: freebsd-12-0-release-amd64
+  test_script:
+    - pkg install -y perl5
+    - echo|cpan App::cpanminus
+    - cpanm --installdeps .
+    - perl Makefile.PL
+    - make
+    - make test
+
+task:
+  name: MacOS
+  osx_instance:
+    image: catalina-xcode-11.3.1
+  test_script:
+    - echo|cpan App::cpanminus
+    - /Users/anka/perl5/bin/cpanm --installdeps .
+    - perl Makefile.PL
+    - make
+    - make test
