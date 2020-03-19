@@ -16,8 +16,8 @@ task:
     image: catalina-xcode-11.3.1
   test_script:
     - echo|cpan App::cpanminus
-    - /Users/anka/perl5/bin/cpanm -v TAP::Harness::Env
-    - /Users/anka/perl5/bin/cpanm -v --installdeps .
+    - /Users/anka/perl5/bin/cpanm TAP::Harness::Env
+    - /Users/anka/perl5/bin/cpanm --installdeps .
     - export PERL5LIB=/Users/anka/perl5/lib/perl5
     - perl Makefile.PL
     - make
