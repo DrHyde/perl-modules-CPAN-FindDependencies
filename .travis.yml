@@ -41,6 +41,6 @@ matrix:
       dist: trusty
       env: COVERAGE=1
 before_install:
-  - cpanm --notest Devel::Hide
   - eval $(curl https://travis-perl.github.io/init) --auto
+  - cpanm --notest Devel::Hide
 sudo: false
