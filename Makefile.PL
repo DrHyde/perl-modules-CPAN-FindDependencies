@@ -28,7 +28,7 @@ WriteMakefile(
   },
   VERSION_FROM => 'lib/CPAN/FindDependencies.pm',
   EXE_FILES    => [qw(
-    examples/cpandeps
+    bin/cpandeps
   )],
   PREREQ_PM    => {
     'Parse::CPAN::Packages' => 2.31,
