@@ -4,6 +4,10 @@ use strict;
 use warnings;
 use vars qw(@indices $VERSION @ISA @EXPORT_OK);
 
+use Archive::Tar;
+use Archive::Zip;
+use Cwd qw(getcwd);
+use File::Temp qw(tempdir);
 use LWP::UserAgent;
 use Module::CoreList;
 use Scalar::Util qw(blessed);
@@ -319,6 +323,7 @@ sub _finddeps_uncached {
     my %reqs = _getreqs(
         author   => $author,
         distname => $distname,
+        distfile => $dist->filename(),
         opts     => $opts,
     );
     my $warning = '';
@@ -350,19 +355,22 @@ sub _finddeps_uncached {
 
 sub _get_file_cached {
     my %args = @_;
-    my($src, $destfile, $opts) = @args{qw(src destfile opts)};
+    my($src, $cachefile, $post_process, $opts) = @args{qw(src cachefile post_process opts)};
     my $contents;
-    if($opts->{cachedir} && -d $opts->{cachedir} && -r $opts->{cachedir}."/$destfile") {
-        open(my $cachefh, $opts->{cachedir}."/$destfile") ||
-            _emitwarning('Error reading '.$opts->{cachedir}."/$destfile: $!");
+    if($opts->{cachedir} && -d $opts->{cachedir} && -r $opts->{cachedir}."/$cachefile") {
+        open(my $cachefh, $opts->{cachedir}."/$cachefile") ||
+            _emitwarning('Error reading '.$opts->{cachedir}."/$cachefile: $!");
         local $/ = undef;
         $contents = <$cachefh>;
         close($cachefh);
     } else {
         $contents = _get($src);
+        if($contents && $post_process ) {
+            $contents = $post_process->($contents);
+        }
         if($contents && $opts->{cachedir} && -d $opts->{cachedir}) {
-            open(my $cachefh, '>', $opts->{cachedir}."/$destfile") ||
-                _emitwarning('Error writing '.$opts->{cachedir}."/$destfile: $!");
+            open(my $cachefh, '>', $opts->{cachedir}."/$cachefile") ||
+                _emitwarning('Error writing '.$opts->{cachedir}."/$cachefile: $!");
             print $cachefh $contents;
             close($cachefh);
         }
@@ -372,13 +380,7 @@ sub _get_file_cached {
 
 sub _getreqs {
     my %args = @_;
-    my($author, $distname, $opts) = @args{qw(author distname opts)};
-
-    # Prefer a metadata file, but if that's not found
-    #     add the warning to the 'warning stack', if there is one
-    # Try scanning the Makefile.PL if this is enabled
-    #     if found, remove the metadata warning and return deps
-    # If neither is found, add warning to stack and return
+    my($author, $distname, $distfile, $opts) = @args{qw(author distname distfile opts)};
 
     my $meta_file;
     foreach my $source (@{$opts->{mirrors}}) {
@@ -386,8 +388,56 @@ sub _getreqs {
             src => $source->{mirror}."authors/id/".
                    substr($author, 0, 1).'/'.
                    substr($author, 0, 2).'/'.
-                   "$author/$distname.meta",
-            destfile => "$distname.yml",
+                   "$author/$distfile",
+            post_process => sub {
+                # _get_file_cached normally just returns a file, but we're asking
+                # it to fetch a an archive from which we want to extract a file,
+                # and then cache that extracted file's contents. This function
+                # takes a raw tarball (or zip, or ...) and either extract/return
+                # a META.json or META.yml's content, or return the empty string
+                my $file_data = shift;
+                my $meta_file_re = qr/^([^\/]+\/)?META\.(json|yml)/;
+                my $rval = undef;
+
+                # We should be able to avoid writing to disk by ...
+                # # my $tar = Archive::Tar->new();
+                # # $tar->read([string opened as file])
+                # # my $zip = Archive::Zip->new();
+                # # $zip->readFromFileHandle(...);
+                # Unfortunately, while that works for Zip, it doesn't for Tar
+                # as that requires an uncompressed stream for ->read(). Balls.
+                my $olddir = getcwd();
+                my $tempdir = tempdir('CPAN-FindDependencies-XXXXXXXX', TMPDIR => 1, CLEANUP => 1);
+                chdir($tempdir);
+                open(my $fh, '>', $distfile) || die("Can't write $tempdir/$distfile\n");
+                print $fh $file_data;
+                close($fh);
+
+                if($distfile =~ /\.zip$/i) {
+                    my $zip = Archive::Zip->new("$tempdir/$distfile");
+                    if(my @members = $zip->membersMatching($meta_file_re)) {
+                        $rval = $zip->contents($members[0])
+                    }
+                } elsif($distfile =~ /\.(tar(\.gz)?|tgz)$/i) {
+                    # OMG TEH REPETITION! FIXME!
+                    my $tar = Archive::Tar->new("$tempdir/$distfile");
+                    if(my @members = grep { /$meta_file_re/ } $tar->list_files()) {
+                        $rval = $tar->get_content($members[0])
+                    }
+                } else {
+                    # Assume tar.bz2
+                    open(my $fh, '-|', qw(bzip2 -dc), $distfile) || warn("Can't unbzip2 $tempdir/$distfile\n");
+                    if($fh) {
+                        my $tar = Archive::Tar->new($fh);
+                        if(my @members = grep { /$meta_file_re/ } $tar->list_files()) {
+                            $rval = $tar->get_content($members[0])
+                        }
+                    }
+                }
+                chdir($olddir);
+                return $rval;
+            },
+            cachefile => "$distname.yml",
             opts => $opts
         );
         last if($meta_file);
@@ -419,7 +469,7 @@ sub _getreqs {
     } else {
         my $makefilepl = _get_file_cached(
             src => "https://fastapi.metacpan.org/source/$author/$distname/Makefile.PL",
-            destfile => "$distname.MakefilePL",
+            cachefile => "$distname.MakefilePL",
             opts => $opts
         );
         if($makefilepl) {
