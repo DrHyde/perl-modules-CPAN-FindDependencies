@@ -18,7 +18,6 @@ task:
     - echo|cpan App::cpanminus
     - /Users/anka/perl5/bin/cpanm TAP::Harness::Env
     - /Users/anka/perl5/bin/cpanm --installdeps .
-    - /Users/anka/perl5/bin/cpanm LWP::Protocol::https
     - export PERL5LIB=/Users/anka/perl5/lib/perl5
     - perl Makefile.PL
     - make
