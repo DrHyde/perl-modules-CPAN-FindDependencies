@@ -46,3 +46,6 @@ t/multi.t
 t/mirrors/privatemirror/authors/id/F/FR/FRUITCO/Brewery-1.0.meta
 t/mirrors/privatemirror/authors/id/F/FR/FRUITCO/Fruit-1.0.meta
 t/mirrors/privatemirror/modules/02packages.details.txt.gz
+t/cache/multi/02packages.details.txt.gz
+t/cache/multi/Capture-Tiny-0.48.yml
+t/cache/multi/File-Temp-0.2311.yml
