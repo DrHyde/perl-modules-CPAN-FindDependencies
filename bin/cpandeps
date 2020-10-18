@@ -1,10 +1,9 @@
-#!perl -w
-
 use strict;
+use warnings;
 
 eval "use CPAN::FindDependencies;";
 if($@) {
-    print STDERR "Couldn't load CPAN::FindDependencies.\n";
+    die "Couldn't load CPAN::FindDependencies.\n";
 }
 
 my $showversion;
@@ -68,6 +67,8 @@ If present, the required version of each module is also shown
 It shows the module name, its distribution, and if any warnings were
 raised (such as if a module's dependencies couldn't be fetched) this
 is indicated with an asterisk before the module's name.
+
+#include shared/incompatible
 
 =head1 WARNINGS, BUGS and FEEDBACK
 

@@ -1,4 +1,7 @@
-XXXX    XXXXXXXXXX      Add extra doco re dynamic dependencies
+3.00    XXXXXXXXXX      configure_requires is now on by default (and can't be
+                          switched off either);
+                        Support multiple CPAN mirrors;
+                        Add extra doco re dynamic dependencies
 
 2.49    2019-10-23      Support for configure_requires
 

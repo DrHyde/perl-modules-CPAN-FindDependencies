@@ -1,7 +1,8 @@
-#!perl -w
 use strict;
+use warnings;
 
 use Test::More;
+use Test::Differences;
 plan tests => 6;
 
 use CPAN::FindDependencies 'finddeps';
@@ -13,7 +14,7 @@ my($stdout, $stderr) = capture {
             $_->name() => [$_->depth(), $_->distribution(), $_->warning()]
         } finddeps(
             'Tie::Scalar::Decay',
-            '02packages'  => 't/cache/Tie-Scalar-Decay-1.1.1/02packages.details.txt.gz',
+            'mirror' => 'DEFAULT,t/cache/Tie-Scalar-Decay-1.1.1/02packages.details.txt.gz',
             cachedir      => 't/cache/Tie-Scalar-Decay-1.1.1',
             nowarnings    => 1,
             usemakefilepl => 1
@@ -21,7 +22,7 @@ my($stdout, $stderr) = capture {
     };
     SKIP: {
         skip("Makefile.PL timed out", 1) if($result->{'Tie::Scalar::Decay'}->[2]);
-        is_deeply(
+        eq_or_diff(
             $result,
             {
                 'Tie::Scalar::Decay' => [0, 'D/DC/DCANTRELL/Tie-Scalar-Decay-1.1.1.tar.gz',undef],
@@ -36,13 +37,13 @@ ok($stdout eq '', "Spew to STDOUT was suppressed: $stdout");
 ok($stderr eq '', "Spew to STDERR was suppressed: $stderr");
 
 ($stdout, $stderr) = capture {
-    is_deeply(
+    eq_or_diff(
         {
             map {
                 $_->name() => [$_->depth(), $_->distribution(), $_->warning()]
             } finddeps(
                 'Tie::Scalar::Decay',
-                '02packages'  => 't/cache/Tie-Scalar-Decay-1.1.1-malicious/02packages.details.txt.gz',
+                'mirror' => 'DEFAULT,t/cache/Tie-Scalar-Decay-1.1.1-malicious/02packages.details.txt.gz',
                 cachedir      => 't/cache/Tie-Scalar-Decay-1.1.1-malicious',
                 nowarnings    => 1,
                 usemakefilepl => 1

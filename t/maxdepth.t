@@ -1,6 +1,5 @@
-#!perl -w
-# $Id: 02-maxdepth.t,v 1.1 2007/12/13 15:16:03 drhyde Exp $
 use strict;
+use warnings;
 
 use Test::More;
 plan tests => 1;
@@ -13,7 +12,7 @@ is_deeply(
             $_->name() => [$_->depth(), $_->distribution(), $_->warning()?1:0]
         } finddeps(
             'CPAN::FindDependencies',
-            '02packages' => 't/cache/CPAN-FindDependencies-1.1/02packages.details.txt.gz',
+            'mirror' => 'DEFAULT,t/cache/CPAN-FindDependencies-1.1/02packages.details.txt.gz',
             cachedir     => 't/cache/CPAN-FindDependencies-1.1',
             nowarnings   => 1,
             maxdepth     => 2

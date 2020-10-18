@@ -1,12 +1,38 @@
-#!perl -w
 use strict;
+use warnings;
+no warnings qw(qw); # suppress warnings about commas in text
+
+use CPAN::FindDependencies qw(finddeps);
 
 use Test::More;
-plan tests => 4;
+use Test::Differences;
+plan tests => 5;
 
 use Devel::CheckOS;
 use Capture::Tiny qw(capture);
 use Config;
+
+# First, make sure that what we're about to test using the script works
+# when using the module directly
+{
+    local $SIG{__WARN__} = sub { my @w = grep { $_ !~ /no META.yml/ } @_; warn(@w) if(@w) };
+    eq_or_diff(
+        {
+         map {
+             $_->name() => [$_->depth(), $_->distribution(), $_->warning() ? 1 : 0]
+           }
+           finddeps(
+               'Tie::Scalar::Decay',
+               mirror   => 'DEFAULT,t/cache/Tie-Scalar-Decay-1.1.1/02packages.details.txt.gz',
+               cachedir => 't/cache/Tie-Scalar-Decay-1.1.1',
+           )
+        },
+        {
+                'Tie::Scalar::Decay' => [0, 'D/DC/DCANTRELL/Tie-Scalar-Decay-1.1.1.tar.gz', 1]
+        },
+        "Fetching directly from the library works"
+    );
+}
 
 SKIP: {
     skip "Script works but tests don't on Windows.  Dunno why.", 4
@@ -17,7 +43,7 @@ my($stdout, $stderr) = capture { system(
     qw(
         blib/script/cpandeps
         Tie::Scalar::Decay
-        02packages t/cache/Tie-Scalar-Decay-1.1.1/02packages.details.txt.gz
+        mirror DEFAULT,t/cache/Tie-Scalar-Decay-1.1.1/02packages.details.txt.gz
         cachedir t/cache/Tie-Scalar-Decay-1.1.1
     )
 )};
@@ -47,8 +73,8 @@ $stderr = join("\n", grep {
 # in case we're deliberately turning this off ...
 $stderr =~ s{Devel::Hide hides LWP/Protocol/https.pm}{};
 
-is_deeply($stderr, '', "no errors reported");
-is_deeply($stdout, "*Tie::Scalar::Decay (dist: D/DC/DCANTRELL/Tie-Scalar-Decay-1.1.1.tar.gz)\n",
+eq_or_diff($stderr, '', "no errors reported");
+eq_or_diff($stdout, "*Tie::Scalar::Decay (dist: D/DC/DCANTRELL/Tie-Scalar-Decay-1.1.1.tar.gz)\n",
     "got Tie::Scalar::Decay right not using Makefile.PL");
 
 ($stdout, $stderr) = capture { system(
@@ -57,12 +83,12 @@ is_deeply($stdout, "*Tie::Scalar::Decay (dist: D/DC/DCANTRELL/Tie-Scalar-Decay-1
         blib/script/cpandeps
         --showmoduleversions
         Tie::Scalar::Decay
-        02packages t/cache/Tie-Scalar-Decay-1.1.1/02packages.details.txt.gz
+        mirror DEFAULT,t/cache/Tie-Scalar-Decay-1.1.1/02packages.details.txt.gz
         cachedir t/cache/Tie-Scalar-Decay-1.1.1
         usemakefilepl 1
     )
 )};
-is_deeply($stdout, 'Tie::Scalar::Decay (dist: D/DC/DCANTRELL/Tie-Scalar-Decay-1.1.1.tar.gz)
+eq_or_diff($stdout, 'Tie::Scalar::Decay (dist: D/DC/DCANTRELL/Tie-Scalar-Decay-1.1.1.tar.gz)
   Time::HiRes (dist: J/JH/JHI/Time-HiRes-1.9719.tar.gz, mod ver: 1.2)
 ', "got Tie::Scalar::Decay right using Makefile.PL and --showmoduleversions");
 
@@ -71,11 +97,11 @@ is_deeply($stdout, 'Tie::Scalar::Decay (dist: D/DC/DCANTRELL/Tie-Scalar-Decay-1.
     qw(
         blib/script/cpandeps
         CPAN::FindDependencies
-        02packages t/cache/CPAN-FindDependencies-1.1/02packages.details.txt.gz
         cachedir t/cache/CPAN-FindDependencies-1.1/
+        mirror DEFAULT,t/cache/CPAN-FindDependencies-1.1/02packages.details.txt.gz
     )
 )};
-is_deeply($stdout, 'CPAN::FindDependencies (dist: D/DC/DCANTRELL/CPAN-FindDependencies-1.1.tar.gz)
+eq_or_diff($stdout, 'CPAN::FindDependencies (dist: D/DC/DCANTRELL/CPAN-FindDependencies-1.1.tar.gz)
   CPAN (dist: A/AN/ANDK/CPAN-1.9205.tar.gz)
     File::Temp (dist: T/TJ/TJENNESS/File-Temp-0.19.tar.gz)
       File::Spec (dist: K/KW/KWILLIAMS/PathTools-3.25.tar.gz)

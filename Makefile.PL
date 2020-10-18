@@ -31,10 +31,12 @@ WriteMakefile(
     bin/cpandeps
   )],
   PREREQ_PM    => {
+    'Test::Differences'     => 0,
     'Parse::CPAN::Packages' => 2.31,
     'Module::CoreList'      => 2.90,
-    'YAML::Tiny'            => 1.57,
+    'CPAN::Meta'            => 0,
     'LWP::UserAgent'        => 0,
+    'LWP::Protocol::https'  => 0,
     'Scalar::Util'          => 1.14,
     'URI::file'             => 4.13,
     'File::Temp'            => 0.19,

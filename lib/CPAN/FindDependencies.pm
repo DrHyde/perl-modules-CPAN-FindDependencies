@@ -2,23 +2,23 @@ package CPAN::FindDependencies;
 
 use strict;
 use warnings;
-use vars qw($p $VERSION @ISA @EXPORT_OK);
+use vars qw(@indices $VERSION @ISA @EXPORT_OK);
 
-use YAML::Tiny ();
 use LWP::UserAgent;
 use Module::CoreList;
 use Scalar::Util qw(blessed);
+use CPAN::Meta;
 use CPAN::FindDependencies::Dependency;
 use CPAN::FindDependencies::MakeMaker qw(getreqs_from_mm);
 use Parse::CPAN::Packages;
+use URI::file;
 
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '2.49';
+$VERSION = '3.00';
 
-use constant DEFAULT02PACKAGES => 'http://www.cpan.org/modules/02packages.details.txt.gz';
 use constant MAXINT => ~0;
 
 =head1 NAME
@@ -33,6 +33,8 @@ CPAN::FindDependencies - find dependencies for modules on the CPAN
         print ' ' x $dep->depth();
         print $dep->name().' ('.$dep->distribution().")\n";
     }
+
+#include shared/incompatible
 
 =head1 HOW IT WORKS
 
@@ -175,8 +177,32 @@ This module is also free-as-in-mason software.
 
 =cut
 
+my $default_mirror = 'https://cpan.metacpan.org/';
 sub finddeps {
-    my($module, %opts) = @_;
+    my($module, @opts) = @_;
+    my %opts = (mirrors => []);
+
+    while(@opts) {
+        my $optname = shift(@opts);
+        my $optarg  = shift(@opts);
+        if($optname ne 'mirror' ) {
+            $opts{$optname} = $optarg
+        } else {
+            my($mirror, $packages) = split(/,/, $optarg);
+            $mirror = $default_mirror if($mirror eq 'DEFAULT');
+            $mirror .= '/' unless($mirror =~ m{/$});
+            push @{$opts{mirrors}}, {
+                mirror => $mirror,
+                packages => $packages ? $packages : "${mirror}modules/02packages.details.txt.gz"
+            };
+        }
+    }
+    unless(@{$opts{mirrors}}) {
+        push @{$opts{mirrors}}, {
+            mirror   => $default_mirror,
+            packages => "${default_mirror}modules/02packages.details.txt.gz"
+        }
+    }
 
     $opts{perl} ||= 5.005;
     $opts{maxdepth} ||= MAXINT;
@@ -193,17 +219,26 @@ sub finddeps {
         $opts{perl} = $parts[0] + $parts[1] / 1000 + $parts[2] / 1000000;
     }
 
-    if(!$p) {
+    if(!@indices) {
         local $SIG{__WARN__} = sub {};
-        $p = Parse::CPAN::Packages->new(_get02packages($opts{'02packages'}));
+        @indices = map {
+            Parse::CPAN::Packages->new(_get02packages($_->{packages}))
+        } @{$opts{mirrors}}
     }
 
+    my $first_found = _first_found($module, @indices);
     return _finddeps(
         opts    => \%opts,
         target  => $module,
         seen    => {},
-        version => ($p->package($module) ? $p->package($module)->version() : 0)
+        version => ($first_found ? $first_found->version() : 0)
     );
+}
+
+sub _first_found {
+    my $module = shift;
+    my @indices = @_;
+    return (map { $_->package($module) } grep { $_->package($module) } @indices)[0];
 }
 
 sub _emitwarning {
@@ -220,7 +255,7 @@ sub _emitwarning {
 
 sub _module2obj {
     my $module = shift;
-    $module = $p->package($module);
+    $module = _first_found($module, @indices);
     return undef if(!$module);
     return $module->distribution();
 }
@@ -229,14 +264,11 @@ sub _module2obj {
 sub _finddeps { return @{_finddeps_uncached(@_)}; }
 
 sub _get02packages {
-    my $file = shift;
-    if($file) {
-        eval 'use URI::file';
-        die($@) if($@);
-        $file = URI::file->new_abs($file);
+    my $url = shift;
+    if($url !~ /^https?:\/\//) {
+        $url = URI::file->new_abs($url);
     }
-    _get($file || DEFAULT02PACKAGES) ||
-        die(__PACKAGE__.": Couldn't fetch 02packages index file\n");
+    _get($url) || die(__PACKAGE__.": Couldn't fetch 02packages index file from $url\n");
 }
 
 sub _get {
@@ -285,11 +317,11 @@ sub _finddeps_uncached {
     return [] if($seen->{$distname});
     $seen->{$distname} = 1;
 
-    my %reqs = @{_getreqs(
+    my %reqs = _getreqs(
         author   => $author,
         distname => $distname,
         opts     => $opts,
-    )};
+    );
     my $warning = '';
     if($reqs{'-warning'}) {
         $warning = $reqs{'-warning'};
@@ -300,7 +332,7 @@ sub _finddeps_uncached {
         CPAN::FindDependencies::Dependency->_new(
             depth      => $depth,
             cpanmodule => $target,
-            p          => $p,
+            indices    => \@indices,
             version    => $version || 0,
             ($warning ? (warning => $warning) : ())
         ),
@@ -349,50 +381,59 @@ sub _getreqs {
     #     if found, remove the META.yml warning and return deps
     # If neither is found, add warning to stack and return
 
-    my $yaml = _get_file_cached(
-        src => "http://fastapi.metacpan.org/source/$author/$distname/META.yml",
-        destfile => "$distname.yml",
-        opts => $opts
-    );
-    if ($yaml) {
-        my $yaml = eval { YAML::Tiny::Load($yaml); };
-        if ($@ || !defined($yaml)) {
+    my $meta_file;
+    foreach my $source (@{$opts->{mirrors}}) {
+        $meta_file = _get_file_cached(
+            src => $source->{mirror}."authors/id/".
+                   substr($author, 0, 1).'/'.
+                   substr($author, 0, 2).'/'.
+                   "$author/$distname.meta",
+            destfile => "$distname.yml",
+            opts => $opts
+        );
+        last if($meta_file)
+    }
+    if ($meta_file) {
+        my $meta_data = eval { CPAN::Meta->load_string($meta_file); };
+        if ($@ || !defined($meta_data)) {
             _emitwarning("$author/$distname: failed to parse META.yml", %{$opts})
         } else {
-            $yaml->{requires} ||= {};
-            $yaml->{build_requires} ||= {};
-            $yaml->{recommends} ||= {};
-            $yaml->{configure_requires} ||= {};
-            return [
-	        %{$yaml->{requires}}, %{$yaml->{build_requires}},
-		($opts->{recommended} ? %{$yaml->{recommends}} : ()),
-		($opts->{configreqs} ? %{$yaml->{configure_requires}} : ()),
-	    ];
+            my $reqs = $meta_data->effective_prereqs();
+            return %{
+                $reqs->merged_requirements(
+                    [qw(configure build test runtime)],
+                    [
+                        'requires',
+                        ($opts->{recommended} ? 'recommends' : ()),
+                        ($opts->{suggested}   ? 'suggests'   : ())
+                    ]
+                )->as_string_hash()
+            };
         }
     } else {
         _emitwarning("$author/$distname: no META.yml", %{$opts});
     }
-        
+    
     # We could have failed to parse the META.yml, but we still want to try the Makefile.PL
     if(!$opts->{usemakefilepl}) {
-        return ['-warning', 'no META.yml'];
+        return ('-warning', 'no META.yml');
     } else {
         my $makefilepl = _get_file_cached(
-            src => "http://fastapi.metacpan.org/source/$author/$distname/Makefile.PL",
+            src => "https://fastapi.metacpan.org/source/$author/$distname/Makefile.PL",
             destfile => "$distname.MakefilePL",
             opts => $opts
         );
         if($makefilepl) {
             my $result = getreqs_from_mm($makefilepl);
             if ('HASH' eq ref $result) {
-                return [ %{ $result } ];
+                return %{ $result };
             } else {
                 _emitwarning("$author/$distname: $result", %{$opts});
-                return ['-warning', $result];
+                return ('-warning', $result);
             }
         } else {
             _emitwarning("$author/$distname: no META.yml nor Makefile.PL", %{$opts});
-            return ['-warning', 'no META.yml nor Makefile.PL'];
+            return ('-warning', 'no META.yml nor Makefile.PL');
         }
     }
 }
