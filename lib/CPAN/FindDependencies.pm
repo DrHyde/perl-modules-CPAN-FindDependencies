@@ -39,8 +39,8 @@ CPAN::FindDependencies - find dependencies for modules on the CPAN
 =head1 HOW IT WORKS
 
 The module uses the CPAN packages index to map modules to distributions and
-vice versa, and then fetches distributions' META.yml or Makefile.PL files from
-C<http://metacpan.org/> to determine pre-requisites.  This means that a
+vice versa, and then fetches distributions' metadata or Makefile.PL files from
+a CPAN mirror to determine pre-requisites.  This means that a
 working interwebnet connection is required.
 
 =head1 FUNCTIONS
@@ -113,7 +113,7 @@ You must have web access to L<http://metacpan.org/> and (unless
 you tell it where else to look for the index)
 L<http://www.cpan.org/>, or have all the data cached locally..
 If any
-META.yml or Makefile.PL files are missing, the distribution's dependencies will
+metadata or Makefile.PL files are missing, the distribution's dependencies will
 not be found and a warning will be spat out.
 
 Startup can be slow, especially if it needs to fetch the index from
@@ -375,10 +375,10 @@ sub _getreqs {
     my %args = @_;
     my($author, $distname, $opts) = @args{qw(author distname opts)};
 
-    # Prefer a META.yml, but if that's not found
+    # Prefer a metadata file, but if that's not found
     #     add the warning to the 'warning stack', if there is one
     # Try scanning the Makefile.PL if this is enabled
-    #     if found, remove the META.yml warning and return deps
+    #     if found, remove the metadata warning and return deps
     # If neither is found, add warning to stack and return
 
     my $meta_file;
@@ -396,7 +396,7 @@ sub _getreqs {
     if ($meta_file) {
         my $meta_data = eval { CPAN::Meta->load_string($meta_file); };
         if ($@ || !defined($meta_data)) {
-            _emitwarning("$author/$distname: failed to parse META.yml", %{$opts})
+            _emitwarning("$author/$distname: failed to parse metadata", %{$opts})
         } else {
             my $reqs = $meta_data->effective_prereqs();
             return %{
@@ -411,12 +411,12 @@ sub _getreqs {
             };
         }
     } else {
-        _emitwarning("$author/$distname: no META.yml", %{$opts});
+        _emitwarning("$author/$distname: no metadata", %{$opts});
     }
     
     # We could have failed to parse the META.yml, but we still want to try the Makefile.PL
     if(!$opts->{usemakefilepl}) {
-        return ('-warning', 'no META.yml');
+        return ('-warning', 'no metadata');
     } else {
         my $makefilepl = _get_file_cached(
             src => "https://fastapi.metacpan.org/source/$author/$distname/Makefile.PL",
@@ -432,8 +432,8 @@ sub _getreqs {
                 return ('-warning', $result);
             }
         } else {
-            _emitwarning("$author/$distname: no META.yml nor Makefile.PL", %{$opts});
-            return ('-warning', 'no META.yml nor Makefile.PL');
+            _emitwarning("$author/$distname: no metadata nor Makefile.PL", %{$opts});
+            return ('-warning', 'no metadata nor Makefile.PL');
         }
     }
 }

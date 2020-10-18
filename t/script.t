@@ -15,7 +15,7 @@ use Config;
 # First, make sure that what we're about to test using the script works
 # when using the module directly
 {
-    local $SIG{__WARN__} = sub { my @w = grep { $_ !~ /no META.yml/ } @_; warn(@w) if(@w) };
+    local $SIG{__WARN__} = sub { my @w = grep { $_ !~ /no metadata/ } @_; warn(@w) if(@w) };
     eq_or_diff(
         {
          map {

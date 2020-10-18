@@ -3,6 +3,7 @@ use warnings;
 
 use Test::More;
 
+use CPAN::FindDependencies qw(finddeps);
 use LWP::Simple;
 
 unless(
@@ -12,15 +13,13 @@ unless(
     exit;
 }
 
-plan tests => 5;
-
-use_ok('CPAN::FindDependencies', 'finddeps');
+plan tests => 4;
 
 my $caught = '';
 $SIG{__WARN__} = sub {
     $caught = $_[0];
     die $caught
-        if($caught !~ /^WARNING: CPAN::FindDependencies:.*no META.yml/);
+        if($caught !~ /^WARNING: CPAN::FindDependencies:.*no metadata/);
 };
 
 my @results = finddeps('Acme::Licence');
@@ -28,14 +27,14 @@ ok(@results == 1 && $results[0]->name() eq 'Acme::Licence',
    "Modules with no META.yml appear in the list of results");
 
 # Acme::License has a Makefile.PL
-ok($caught eq "WARNING: CPAN::FindDependencies: DCANTRELL/Acme-Licence-1.0: no META.yml\n",
+ok($caught eq "WARNING: CPAN::FindDependencies: DCANTRELL/Acme-Licence-1.0: no metadata\n",
    "... and generate a warning");
 
 $caught = '';
 eval { finddeps('Acme::Licence', fatalerrors => 1) };
-ok($@ eq "FATAL: CPAN::FindDependencies: DCANTRELL/Acme-Licence-1.0: no META.yml\n" &&
+ok($@ eq "FATAL: CPAN::FindDependencies: DCANTRELL/Acme-Licence-1.0: no metadata\n" &&
    $caught eq '',
-   "fatalerrors really does make META.yml errors fatal");
+   "fatalerrors really does make metadata errors fatal");
 
 $caught = '';
 finddeps('Acme::Licence', nowarnings => 1);
