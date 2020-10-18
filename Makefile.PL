@@ -32,8 +32,9 @@ WriteMakefile(
   )],
   PREREQ_PM    => {
     'Test::Differences'     => 0,
+    'Test::More'            => 0.88, # done_testing
     'Parse::CPAN::Packages' => 2.31,
-    'Module::CoreList'      => 2.90,
+    'Module::CoreList'      => '5.20200920',
     'CPAN::Meta'            => 0,
     'LWP::UserAgent'        => 0,
     'LWP::Protocol::https'  => 0,

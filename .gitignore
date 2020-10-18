@@ -3,3 +3,7 @@ MYMETA.yml
 Makefile
 blib/
 pm_to_blib
+
+# these might be left in the cache from test runs
+t/cache/multi/Brewery-1.0.yml
+t/cache/multi/Fruit-1.0.yml

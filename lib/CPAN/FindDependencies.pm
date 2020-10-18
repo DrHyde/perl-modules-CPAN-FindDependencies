@@ -191,8 +191,11 @@ sub finddeps {
             my($mirror, $packages) = split(/,/, $optarg);
             $mirror = $default_mirror if($mirror eq 'DEFAULT');
             $mirror .= '/' unless($mirror =~ m{/$});
+            if($mirror !~ /^https?:\/\//) {
+                $mirror = ''.URI::file->new_abs($mirror);
+            }
             push @{$opts{mirrors}}, {
-                mirror => $mirror,
+                mirror   => $mirror,
                 packages => $packages ? $packages : "${mirror}modules/02packages.details.txt.gz"
             };
         }
@@ -211,10 +214,6 @@ sub finddeps {
         if($opts{perl} =~ /[^0-9.]/);
 
     if($opts{perl} =~ /\..*\./) {
-        _emitwarning(
-            "Three-part version numbers are a bad idea",
-            %opts
-        );
         my @parts = split(/\./, $opts{perl});
         $opts{perl} = $parts[0] + $parts[1] / 1000 + $parts[2] / 1000000;
     }
@@ -265,8 +264,8 @@ sub _finddeps { return @{_finddeps_uncached(@_)}; }
 
 sub _get02packages {
     my $url = shift;
-    if($url !~ /^https?:\/\//) {
-        $url = URI::file->new_abs($url);
+    if($url !~ /^(file|https?):/) {
+        $url = ''.URI::file->new_abs($url);
     }
     _get($url) || die(__PACKAGE__.": Couldn't fetch 02packages index file from $url\n");
 }
@@ -391,7 +390,7 @@ sub _getreqs {
             destfile => "$distname.yml",
             opts => $opts
         );
-        last if($meta_file)
+        last if($meta_file);
     }
     if ($meta_file) {
         my $meta_data = eval { CPAN::Meta->load_string($meta_file); };
