@@ -410,6 +410,7 @@ sub _getreqs {
                 my $tempdir = tempdir('CPAN-FindDependencies-XXXXXXXX', TMPDIR => 1, CLEANUP => 1);
                 chdir($tempdir);
                 open(my $fh, '>', $distfile) || die("Can't write $tempdir/$distfile\n");
+                binmode($fh); # Windows smells of wee
                 print $fh $file_data;
                 close($fh);
 
