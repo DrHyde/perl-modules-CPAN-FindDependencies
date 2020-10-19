@@ -18,6 +18,7 @@ WriteMakefile(
     'Archive::Tar'          => 0,
     'Archive::Zip'          => 0,
     'Cwd'                   => 0,
+    'File::Type'            => 0,
     'Test::Differences'     => 0,
     'Test::More'            => 0.88, # done_testing
     'Parse::CPAN::Packages' => 2.31,

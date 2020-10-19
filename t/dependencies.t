@@ -30,7 +30,7 @@ is_deeply(
         'LWP::UserAgent' => [1, 'G/GA/GAAS/libwww-perl-5.808.tar.gz', 1],
         'YAML' => [1, 'I/IN/INGY/YAML-0.66.tar.gz',0],
     ],
-    "Dependencies calculated OK with default perl"
+    "Dependencies calculated OK with default perl and no maxdepth"
 );
 is_deeply(
     {

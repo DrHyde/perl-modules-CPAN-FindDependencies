@@ -2,12 +2,13 @@ package CPAN::FindDependencies;
 
 use strict;
 use warnings;
-use vars qw(@indices $VERSION @ISA @EXPORT_OK);
+use vars qw(@indices @net_log $VERSION @ISA @EXPORT_OK);
 
 use Archive::Tar;
 use Archive::Zip;
 use Cwd qw(getcwd);
 use File::Temp qw(tempdir);
+use File::Type;
 use LWP::UserAgent;
 use Module::CoreList;
 use Scalar::Util qw(blessed);
@@ -183,6 +184,7 @@ This module is also free-as-in-mason software.
 
 my $default_mirror = 'https://cpan.metacpan.org/';
 sub finddeps {
+    @net_log = ();
     my($module, @opts) = @_;
     my %opts = (mirrors => []);
 
@@ -212,7 +214,7 @@ sub finddeps {
     }
 
     $opts{perl} ||= 5.005;
-    $opts{maxdepth} ||= MAXINT;
+    $opts{maxdepth} = MAXINT unless(defined($opts{maxdepth}));
 
     die(__PACKAGE__.": $opts{perl} is a broken version number\n")
         if($opts{perl} =~ /[^0-9.]/);
@@ -279,6 +281,7 @@ sub _get {
     my $ua = LWP::UserAgent->new();
     $ua->env_proxy();
     $ua->agent(__PACKAGE__."/$VERSION");
+    push @net_log, $url;
     my $response = $ua->get($url);
     if($response->is_success()) {
         return $response->content();
@@ -357,6 +360,20 @@ sub _get_file_cached {
     my %args = @_;
     my($src, $cachefile, $post_process, $opts) = @args{qw(src cachefile post_process opts)};
     my $contents;
+    # asked to check multiple sources? Return the first which has
+    # content (or what's cached)
+    if(ref($src)) {
+        foreach my $this_url (@{$src}) {
+            last if($contents = _get_file_cached(
+                %{ {
+                    @_,
+                    src => $this_url
+                } }
+            ));
+        }
+        return $contents;
+    }
+
     if($opts->{cachedir} && -d $opts->{cachedir} && -r $opts->{cachedir}."/$cachefile") {
         open(my $cachefh, $opts->{cachedir}."/$cachefile") ||
             _emitwarning('Error reading '.$opts->{cachedir}."/$cachefile: $!");
@@ -385,10 +402,16 @@ sub _getreqs {
     my $meta_file;
     foreach my $source (@{$opts->{mirrors}}) {
         $meta_file = _get_file_cached(
-            src => $source->{mirror}."authors/id/".
-                   substr($author, 0, 1).'/'.
-                   substr($author, 0, 2).'/'.
-                   "$author/$distfile",
+            src => [
+                $source->{mirror}."authors/id/".
+                    substr($author, 0, 1).'/'.
+                    substr($author, 0, 2).'/'.
+                    "$author/$distname.meta",
+                $source->{mirror}."authors/id/".
+                    substr($author, 0, 1).'/'.
+                    substr($author, 0, 2).'/'.
+                    "$author/$distfile"
+            ],
             post_process => sub {
                 # _get_file_cached normally just returns a file, but we're asking
                 # it to fetch a an archive from which we want to extract a file,
@@ -409,31 +432,37 @@ sub _getreqs {
                 my $olddir = getcwd();
                 my $tempdir = tempdir('CPAN-FindDependencies-XXXXXXXX', TMPDIR => 1, CLEANUP => 1);
                 chdir($tempdir);
-                open(my $fh, '>', $distfile) || die("Can't write $tempdir/$distfile\n");
+                # write to $distname here, not $distfile. The filename
+                # doesn't actually matter once we've retrieved it, and
+                # $distfile may contain a directory part, eg like
+                # M/MU/MUIR/modules/Text-Tabs+Wrap-2013.0523.tar.gz
+                open(my $fh, '>', $distname) || die("Can't write $tempdir/$distname: $!\n");
                 binmode($fh); # Windows smells of wee
                 print $fh $file_data;
                 close($fh);
 
-                if($distfile =~ /\.zip$/i) {
-                    my $zip = Archive::Zip->new("$tempdir/$distfile");
+                if(File::Type->mime_type($file_data) eq 'application/zip') {
+                    my $zip = Archive::Zip->new("$tempdir/$distname");
                     if(my @members = $zip->membersMatching($meta_file_re)) {
                         $rval = $zip->contents($members[0])
                     }
-                } elsif($distfile =~ /\.(tar(\.gz)?|tgz)$/i) {
+                } elsif(File::Type->mime_type($file_data) eq 'application/x-gzip') {
                     # OMG TEH REPETITION! FIXME!
-                    my $tar = Archive::Tar->new("$tempdir/$distfile");
+                    my $tar = Archive::Tar->new("$tempdir/$distname");
                     if(my @members = grep { /$meta_file_re/ } $tar->list_files()) {
                         $rval = $tar->get_content($members[0])
                     }
-                } else {
-                    # Assume tar.bz2
-                    open(my $fh, '-|', qw(bzip2 -dc), $distfile) || warn("Can't unbzip2 $tempdir/$distfile\n");
+                } elsif(File::Type->mime_type($file_data) eq 'application/x-bzip2') {
+                    open(my $fh, '-|', qw(bzip2 -dc), $distname) || warn("Can't unbzip2 $tempdir/$distname\n");
                     if($fh) {
                         my $tar = Archive::Tar->new($fh);
                         if(my @members = grep { /$meta_file_re/ } $tar->list_files()) {
                             $rval = $tar->get_content($members[0])
                         }
                     }
+                } else {
+                    # oh, it must have been a meta file
+                    $rval = $file_data;
                 }
                 chdir($olddir);
                 return $rval;

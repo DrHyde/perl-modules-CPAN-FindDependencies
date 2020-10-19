@@ -2,11 +2,11 @@ use strict;
 use warnings;
 
 use Test::More;
-plan tests => 1;
+use Test::Differences;
 
 use CPAN::FindDependencies 'finddeps';
 
-is_deeply(
+eq_or_diff(
     [
         map {
             $_->name() => [$_->depth(), $_->distribution(), $_->warning()?1:0]
@@ -28,5 +28,25 @@ is_deeply(
         'LWP::UserAgent' => [1, 'G/GA/GAAS/libwww-perl-5.808.tar.gz', 1],
         'YAML' => [1, 'I/IN/INGY/YAML-0.66.tar.gz',0],
     ],
-    "Maxdepth cuts off correctly"
+    "Maxdepth cuts off correctly for a non-zero value"
 );
+
+eq_or_diff(
+    [
+        map {
+            $_->name() => [$_->depth(), $_->distribution(), $_->warning()?1:0]
+        } finddeps(
+            'CPAN::FindDependencies',
+            'mirror' => 'DEFAULT,t/cache/CPAN-FindDependencies-1.1/02packages.details.txt.gz',
+            cachedir     => 't/cache/CPAN-FindDependencies-1.1',
+            nowarnings   => 1,
+            maxdepth     => 0
+        )
+    ],
+    [
+        'CPAN::FindDependencies' => [0, 'D/DC/DCANTRELL/CPAN-FindDependencies-1.1.tar.gz',0],
+    ],
+    "Maxdepth cuts off correctly with zero value"
+);
+
+done_testing();
