@@ -30,6 +30,9 @@ Cuts off the dependency tree at the specified depth.  Your specified
 module is at depth 0, your dependencies at depth 1, their dependencies
 at depth 2, and so on.
 
+If you don't specify any maxdepth at all it will grovel over the
+entire tree.
+
 =item mirror
 
 This can be provided more than once, if for example you want to use
