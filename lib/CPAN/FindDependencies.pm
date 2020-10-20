@@ -2,11 +2,10 @@ package CPAN::FindDependencies;
 
 use strict;
 use warnings;
-use vars qw(@indices @net_log $VERSION @ISA @EXPORT_OK);
+use vars qw(@net_log $VERSION @ISA @EXPORT_OK);
 
 use Archive::Tar;
 use Archive::Zip;
-use Cwd qw(getcwd);
 use File::Temp qw(tempdir);
 use File::Type;
 use LWP::UserAgent;
@@ -183,16 +182,18 @@ This module is also free-as-in-mason software.
 =cut
 
 my $default_mirror = 'https://cpan.metacpan.org/';
+
 sub finddeps {
     @net_log = ();
-    my($module, @opts) = @_;
-    my %opts = (mirrors => []);
+    my($module, @args) = @_;
 
-    while(@opts) {
-        my $optname = shift(@opts);
-        my $optarg  = shift(@opts);
+    my $self = bless({ indices => [], mirrors => [] }, __PACKAGE__);
+
+    while(@args) {
+        my $optname = shift(@args);
+        my $optarg  = shift(@args);
         if($optname ne 'mirror' ) {
-            $opts{$optname} = $optarg
+            $self->{$optname} = $optarg
         } else {
             my($mirror, $packages) = split(/,/, $optarg);
             $mirror = $default_mirror if($mirror eq 'DEFAULT');
@@ -200,57 +201,89 @@ sub finddeps {
             if($mirror !~ /^https?:\/\//) {
                 $mirror = ''.URI::file->new_abs($mirror);
             }
-            push @{$opts{mirrors}}, {
+            push @{$self->{mirrors}}, {
                 mirror   => $mirror,
                 packages => $packages ? $packages : "${mirror}modules/02packages.details.txt.gz"
             };
         }
     }
-    unless(@{$opts{mirrors}}) {
-        push @{$opts{mirrors}}, {
+    unless(@{$self->{mirrors}}) {
+        push @{$self->{mirrors}}, {
             mirror   => $default_mirror,
             packages => "${default_mirror}modules/02packages.details.txt.gz"
         }
     }
 
-    $opts{perl} ||= 5.005;
-    $opts{maxdepth} = MAXINT unless(defined($opts{maxdepth}));
+    $self->{maxdepth} = MAXINT unless(defined($self->{maxdepth}));
 
-    die(__PACKAGE__.": $opts{perl} is a broken version number\n")
-        if($opts{perl} =~ /[^0-9.]/);
-
-    if($opts{perl} =~ /\..*\./) {
-        my @parts = split(/\./, $opts{perl});
-        $opts{perl} = $parts[0] + $parts[1] / 1000 + $parts[2] / 1000000;
+    $self->{perl} ||= 5.005;
+    die(__PACKAGE__.": $self->{perl} is a broken version number\n")
+        if($self->{perl} =~ /[^0-9.]/);
+    if($self->{perl} =~ /\..*\./) {
+        my @parts = split(/\./, $self->{perl});
+        $self->{perl} = $parts[0] + $parts[1] / 1000 + $parts[2] / 1000000;
     }
 
-    if(!@indices) {
-        local $SIG{__WARN__} = sub {};
-        @indices = map {
-            Parse::CPAN::Packages->new(_get02packages($_->{packages}))
-        } @{$opts{mirrors}}
-    }
-
-    my $first_found = _first_found($module, @indices);
-    return _finddeps(
-        opts    => \%opts,
+    my $first_found = $self->_first_found($module);
+    return $self->_finddeps(
         target  => $module,
         seen    => {},
         version => ($first_found ? $first_found->version() : 0)
     );
 }
 
-sub _first_found {
-    my $module = shift;
-    my @indices = @_;
-    return (map { $_->package($module) } grep { $_->package($module) } @indices)[0];
+sub _indices {
+    my $self = shift;
+    if(!@{$self->{indices}}) {
+        local $SIG{__WARN__} = sub {};
+        $self->{indices} = [map {
+            my $url = $_->{packages};
+            $self->_get_parsed_index($url);
+        } @{$self->{mirrors}}]
+    }
+    return @{$self->{indices}};
 }
 
-sub _emitwarning {
-    my($msg, %opts) = @_;
-    $msg = __PACKAGE__.": $msg\n";
-    if(!$opts{nowarnings}) {
-        if($opts{fatalerrors} ) {
+# _get_parsed_index is memoized for performance, cos even if the
+# file is fetched from disk uncompressing/parsing take ages.
+# the cache lasts three minutes.
+our %_get_parsed_index_cache = ();
+sub _get_parsed_index {
+    my $self = shift;
+    my $url = shift;
+
+    if(exists($_get_parsed_index_cache{$url}) && $_get_parsed_index_cache{$url}->{expiry} > time()) {
+        return $_get_parsed_index_cache{$url}->{index};
+    } else {
+        $_get_parsed_index_cache{$url}->{expiry} = time() + 180;
+        return $_get_parsed_index_cache{$url}->{index} = Parse::CPAN::Packages->new($self->_get02packages($url));
+    }
+}
+
+sub _get02packages {
+    my $self = shift;
+    my $url = shift;
+    if($url !~ /^(file|https?):/) {
+        $url = ''.URI::file->new_abs($url);
+    }
+    $self->_get($url) || die(__PACKAGE__.": Couldn't fetch 02packages index file from $url\n");
+}
+
+# look through all the mirrors' 02packages for a module and return a
+# Parse::CPAN::Packages::Package for the first one it finds
+sub _first_found {
+    my $self = shift;
+    my $module = shift;
+    return (map { $_->package($module) } grep { $_->package($module) } $self->_indices())[0];
+}
+
+sub _yell {
+    my $self = shift;
+    my $msg = shift;
+    $msg = __PACKAGE__.": $msg";
+    $msg = "$msg\n" unless(substr($msg, -1, 1) eq "\n");
+    if(!$self->{nowarnings}) {
+        if($self->{fatalerrors} ) {
             die('FATAL: '.$msg);
         } else {
             warn('WARNING: '.$msg);
@@ -258,25 +291,23 @@ sub _emitwarning {
     }
 }
 
+# take a module, return a Parse::CPAN::Packages::Distribution
 sub _module2obj {
+    my $self = shift;
     my $module = shift;
-    $module = _first_found($module, @indices);
-    return undef if(!$module);
-    return $module->distribution();
+    my $package = $self->_first_found($module);
+    return undef if(!$package);
+    return $package->distribution();
 }
 
 # FIXME make these memoise, maybe to disk
-sub _finddeps { return @{_finddeps_uncached(@_)}; }
-
-sub _get02packages {
-    my $url = shift;
-    if($url !~ /^(file|https?):/) {
-        $url = ''.URI::file->new_abs($url);
-    }
-    _get($url) || die(__PACKAGE__.": Couldn't fetch 02packages index file from $url\n");
+sub _finddeps {
+    my $self = shift;
+    return @{$self->_finddeps_uncached(@_)};
 }
 
 sub _get {
+    my $self = shift;
     my $url = shift;
     my $ua = LWP::UserAgent->new();
     $ua->env_proxy();
@@ -291,6 +322,7 @@ sub _get {
 }
 
 sub _incore {
+    my $self = shift;
     my %args = @_;
     my $core = $Module::CoreList::version{$args{perl}}{$args{module}};
     $core =~ s/_/00/g if($core);
@@ -299,21 +331,22 @@ sub _incore {
 }
 
 sub _finddeps_uncached {
+    my $self = shift;
     my %args = @_;
-    my( $target, $opts, $depth, $version, $seen) = @args{qw(
-        target opts depth version seen
+    my( $target, $depth, $version, $seen) = @args{qw(
+        target depth version seen
     )};
     $depth ||= 0;
 
     return [] if(
         $target eq 'perl' ||
-        _incore(
+        $self->_incore(
             module => $target,
-            perl => $opts->{perl},
+            perl => $self->{perl},
             version => $version)
     );
 
-    my $dist = _module2obj($target);
+    my $dist = $self->_module2obj($target);
 
     return [] unless(blessed($dist));
 
@@ -323,11 +356,10 @@ sub _finddeps_uncached {
     return [] if($seen->{$distname});
     $seen->{$distname} = 1;
 
-    my %reqs = _getreqs(
+    my %reqs = $self->_getreqs(
         author   => $author,
         distname => $distname,
         distfile => $dist->filename(),
-        opts     => $opts,
     );
     my $warning = '';
     if($reqs{'-warning'}) {
@@ -337,17 +369,17 @@ sub _finddeps_uncached {
 
     return [
         CPAN::FindDependencies::Dependency->_new(
-            depth      => $depth,
-            cpanmodule => $target,
-            indices    => \@indices,
-            version    => $version || 0,
+            depth        => $depth,
+            distribution => $dist,
+            cpanmodule   => $target,
+            indices      => [$self->_indices()],
+            version      => $version || 0,
             ($warning ? (warning => $warning) : ())
         ),
-        ($depth != $opts->{maxdepth}) ? (map {
+        ($depth != $self->{maxdepth}) ? (map {
             # print "Looking at $_\n";
-            _finddeps(
+            $self->_finddeps(
                 target  => $_,
-                opts    => $opts,
                 depth   => $depth + 1,
                 seen    => $seen,
                 version => $reqs{$_}
@@ -357,14 +389,15 @@ sub _finddeps_uncached {
 }
 
 sub _get_file_cached {
+    my $self = shift;
     my %args = @_;
-    my($src, $cachefile, $post_process, $opts) = @args{qw(src cachefile post_process opts)};
+    my($src, $cachefile, $post_process) = @args{qw(src cachefile post_process)};
     my $contents;
     # asked to check multiple sources? Return the first which has
     # content (or what's cached)
     if(ref($src)) {
         foreach my $this_url (@{$src}) {
-            last if($contents = _get_file_cached(
+            last if($contents = $self->_get_file_cached(
                 %{ {
                     @_,
                     src => $this_url
@@ -374,20 +407,20 @@ sub _get_file_cached {
         return $contents;
     }
 
-    if($opts->{cachedir} && -d $opts->{cachedir} && -r $opts->{cachedir}."/$cachefile") {
-        open(my $cachefh, $opts->{cachedir}."/$cachefile") ||
-            _emitwarning('Error reading '.$opts->{cachedir}."/$cachefile: $!");
+    if($self->{cachedir} && -d $self->{cachedir} && -r $self->{cachedir}."/$cachefile") {
+        open(my $cachefh, $self->{cachedir}."/$cachefile") ||
+            $self->_yell('Error reading '.$self->{cachedir}."/$cachefile: $!");
         local $/ = undef;
         $contents = <$cachefh>;
         close($cachefh);
     } else {
-        $contents = _get($src);
+        $contents = $self->_get($src);
         if($contents && $post_process ) {
             $contents = $post_process->($contents);
         }
-        if($contents && $opts->{cachedir} && -d $opts->{cachedir}) {
-            open(my $cachefh, '>', $opts->{cachedir}."/$cachefile") ||
-                _emitwarning('Error writing '.$opts->{cachedir}."/$cachefile: $!");
+        if($contents && $self->{cachedir} && -d $self->{cachedir}) {
+            open(my $cachefh, '>', $self->{cachedir}."/$cachefile") ||
+                $self->_yell('Error writing '.$self->{cachedir}."/$cachefile: $!");
             print $cachefh $contents;
             close($cachefh);
         }
@@ -396,12 +429,13 @@ sub _get_file_cached {
 }
 
 sub _getreqs {
+    my $self = shift;
     my %args = @_;
-    my($author, $distname, $distfile, $opts) = @args{qw(author distname distfile opts)};
+    my($author, $distname, $distfile) = @args{qw(author distname distfile)};
 
     my $meta_file;
-    foreach my $source (@{$opts->{mirrors}}) {
-        $meta_file = _get_file_cached(
+    foreach my $source (@{$self->{mirrors}}) {
+        $meta_file = $self->_get_file_cached(
             src => [
                 $source->{mirror}."authors/id/".
                     substr($author, 0, 1).'/'.
@@ -413,69 +447,62 @@ sub _getreqs {
                     "$author/$distfile"
             ],
             post_process => sub {
-                # _get_file_cached normally just returns a file, but we're asking
-                # it to fetch a an archive from which we want to extract a file,
+                # _get_file_cached normally just returns a file, but we're
+                # asking it to either fetch a metadata file or if that can't be
+                # found fetch an archive from which we want to extract a file,
                 # and then cache that extracted file's contents. This function
-                # takes a raw tarball (or zip, or ...) and either extract/return
-                # a META.json or META.yml's content, or return the empty string
+                # takes a blob of data and if it looks like a zip or a tarball
+                # tries to extract a META.json or META.yml and return its content
+                # (or the empty string if not found), otherwise if it doesn't
+                # look like an archive, assume that the input was a valid metadata
+                # file after all and just return it.
                 my $file_data = shift;
                 my $meta_file_re = qr/^([^\/]+\/)?META\.(json|yml)/;
-                my $rval = undef;
+                my $rval = '';
 
-                # We should be able to avoid writing to disk by ...
+                # We should be able to avoid writing to disk by something like
+                # this but it doesn't work, for either zip or tar <shrug>
                 # # my $tar = Archive::Tar->new();
                 # # $tar->read([string opened as file])
-                # # my $zip = Archive::Zip->new();
-                # # $zip->readFromFileHandle(...);
-                # Unfortunately, while that works for Zip, it doesn't for Tar
-                # as that requires an uncompressed stream for ->read(). Balls.
-                my $olddir = getcwd();
-                my $tempdir = tempdir('CPAN-FindDependencies-XXXXXXXX', TMPDIR => 1, CLEANUP => 1);
-                chdir($tempdir);
-                # write to $distname here, not $distfile. The filename
+                # We write to $distname here, not $distfile. The filename
                 # doesn't actually matter once we've retrieved it, and
                 # $distfile may contain a directory part, eg like
                 # M/MU/MUIR/modules/Text-Tabs+Wrap-2013.0523.tar.gz
-                open(my $fh, '>', $distname) || die("Can't write $tempdir/$distname: $!\n");
+                my $tempdir = tempdir('CPAN-FindDependencies-XXXXXXXX', TMPDIR => 1, CLEANUP => 1);
+                open(my $fh, '>', "$tempdir/$distname") || die("Can't write $tempdir/$distname: $!\n");
                 binmode($fh); # Windows smells of wee
                 print $fh $file_data;
                 close($fh);
+
+                my $tar_extractor = sub {
+                    my $tar = Archive::Tar->new(shift());
+                    if(my @members = grep { /$meta_file_re/ } $tar->list_files()) {
+                        $rval = $tar->get_content($members[0])
+                    }
+                };
 
                 if(File::Type->mime_type($file_data) eq 'application/zip') {
                     my $zip = Archive::Zip->new("$tempdir/$distname");
                     if(my @members = $zip->membersMatching($meta_file_re)) {
                         $rval = $zip->contents($members[0])
                     }
-                } elsif(File::Type->mime_type($file_data) eq 'application/x-gzip') {
-                    # OMG TEH REPETITION! FIXME!
-                    my $tar = Archive::Tar->new("$tempdir/$distname");
-                    if(my @members = grep { /$meta_file_re/ } $tar->list_files()) {
-                        $rval = $tar->get_content($members[0])
-                    }
+                } elsif(File::Type->mime_type($file_data) =~ m{^application/x-(gzip|tar)$}) {
+                    $tar_extractor->("$tempdir/$distname");
                 } elsif(File::Type->mime_type($file_data) eq 'application/x-bzip2') {
-                    open(my $fh, '-|', qw(bzip2 -dc), $distname) || warn("Can't unbzip2 $tempdir/$distname\n");
-                    if($fh) {
-                        my $tar = Archive::Tar->new($fh);
-                        if(my @members = grep { /$meta_file_re/ } $tar->list_files()) {
-                            $rval = $tar->get_content($members[0])
-                        }
-                    }
-                } else {
-                    # oh, it must have been a meta file
-                    $rval = $file_data;
-                }
-                chdir($olddir);
+                    open(my $fh, '-|', qw(bzip2 -dc), "$tempdir/$distname") ||
+                        $self->_yell("Can't unbzip2 $tempdir/$distname");
+                    if($fh) { $tar_extractor->($fh); }
+                } else { $rval = $file_data; } # oh, it must have been a meta file
                 return $rval;
             },
             cachefile => "$distname.yml",
-            opts => $opts
         );
         last if($meta_file);
     }
     if ($meta_file) {
         my $meta_data = eval { CPAN::Meta->load_string($meta_file); };
         if ($@ || !defined($meta_data)) {
-            _emitwarning("$author/$distname: failed to parse metadata", %{$opts})
+            $self->_yell("$author/$distname: failed to parse metadata")
         } else {
             my $reqs = $meta_data->effective_prereqs();
             return %{
@@ -483,35 +510,34 @@ sub _getreqs {
                     [qw(configure build test runtime)],
                     [
                         'requires',
-                        ($opts->{recommended} ? 'recommends' : ()),
-                        ($opts->{suggested}   ? 'suggests'   : ())
+                        ($self->{recommended} ? 'recommends' : ()),
+                        ($self->{suggested}   ? 'suggests'   : ())
                     ]
                 )->as_string_hash()
             };
         }
     } else {
-        _emitwarning("$author/$distname: no metadata", %{$opts});
+        $self->_yell("$author/$distname: no metadata");
     }
     
     # We could have failed to parse the META.yml, but we still want to try the Makefile.PL
-    if(!$opts->{usemakefilepl}) {
+    if(!$self->{usemakefilepl}) {
         return ('-warning', 'no metadata');
     } else {
-        my $makefilepl = _get_file_cached(
+        my $makefilepl = $self->_get_file_cached(
             src => "https://fastapi.metacpan.org/source/$author/$distname/Makefile.PL",
             cachefile => "$distname.MakefilePL",
-            opts => $opts
         );
         if($makefilepl) {
             my $result = getreqs_from_mm($makefilepl);
             if ('HASH' eq ref $result) {
                 return %{ $result };
             } else {
-                _emitwarning("$author/$distname: $result", %{$opts});
+                $self->_yell("$author/$distname: $result");
                 return ('-warning', $result);
             }
         } else {
-            _emitwarning("$author/$distname: no metadata nor Makefile.PL", %{$opts});
+            $self->_yell("$author/$distname: no metadata nor Makefile.PL");
             return ('-warning', 'no metadata nor Makefile.PL');
         }
     }

@@ -7,7 +7,7 @@ use warnings;
 
 use vars qw($VERSION);
 
-$VERSION = '2.1';
+$VERSION = '3.00';
 
 =head1 NAME
 
@@ -49,7 +49,7 @@ The name of the distribution containing the module
 =cut
 
 sub distribution {
-    CPAN::FindDependencies::_first_found($_[0]->name(), @{$_[0]->{indices}})->distribution()->prefix();
+    $_[0]->{distribution}->prefix();
 }
 
 =head2 version

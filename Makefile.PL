@@ -17,10 +17,10 @@ WriteMakefile(
   PREREQ_PM    => {
     'Archive::Tar'          => 0,
     'Archive::Zip'          => 0,
-    'Cwd'                   => 0,
     'File::Type'            => 0,
     'Test::Differences'     => 0,
     'Test::More'            => 0.88, # done_testing
+    'Test::Time'            => 0,
     'Parse::CPAN::Packages' => 2.31,
     'Module::CoreList'      => '5.20200920',
     'CPAN::Meta'            => 0,

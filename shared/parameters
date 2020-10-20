@@ -18,8 +18,6 @@ specified, it defaults to 5.005.  Three part version numbers
 
 A directory to use for caching.  It defaults to no caching.  Even if
 caching is turned on, this is only for META.yml or Makefile.PL files.
-02packages is not cached - if you want to read that from a local disk, see the
-C<02packages> option.
 
 The cache is never automatically cleared out. It is your responsibility
 to clear out old data.
@@ -53,6 +51,8 @@ copy of its 02packages, specify two mirrors thus:
 
   mirror => 'https://cpan.mydomain.net',
   mirror => 'DEFAULT,file:///home/me/mycache/02packages.txt.gz'
+
+The index is cached for three minutes or until your process finishes, whichever is soonest. This is because it is HUMUNGOUS and parsing it takes ages even when it's loaded from a local disk, and I don't want the tests to take forever.
 
 =item usemakefilepl
 
