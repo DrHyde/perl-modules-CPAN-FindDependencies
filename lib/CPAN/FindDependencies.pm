@@ -232,41 +232,27 @@ sub finddeps {
     );
 }
 
+# indices are cached for performance, cos even if the
+# file is fetched from disk uncompressing/parsing take ages.
+# the cache lasts three minutes.
+our %_parsed_index_cache = ();
 sub _indices {
     my $self = shift;
     if(!@{$self->{indices}}) {
         local $SIG{__WARN__} = sub {};
         $self->{indices} = [map {
             my $url = $_->{packages};
-            $self->_get_parsed_index($url);
+            if($url !~ /^(file|https?):/) { $url = ''.URI::file->new_abs($url); }
+            if(!(exists($_parsed_index_cache{$url}) && $_parsed_index_cache{$url}->{expiry} > time())) {
+                $_parsed_index_cache{$url}->{expiry} = time() + 180;
+                $_parsed_index_cache{$url}->{index} = Parse::CPAN::Packages->new(
+                    $self->_get($url) || die(__PACKAGE__.": Couldn't fetch 02packages index file from $url\n")
+                );
+            }
+            $_parsed_index_cache{$url}->{index}
         } @{$self->{mirrors}}]
     }
     return @{$self->{indices}};
-}
-
-# _get_parsed_index is memoized for performance, cos even if the
-# file is fetched from disk uncompressing/parsing take ages.
-# the cache lasts three minutes.
-our %_get_parsed_index_cache = ();
-sub _get_parsed_index {
-    my $self = shift;
-    my $url = shift;
-
-    if(exists($_get_parsed_index_cache{$url}) && $_get_parsed_index_cache{$url}->{expiry} > time()) {
-        return $_get_parsed_index_cache{$url}->{index};
-    } else {
-        $_get_parsed_index_cache{$url}->{expiry} = time() + 180;
-        return $_get_parsed_index_cache{$url}->{index} = Parse::CPAN::Packages->new($self->_get02packages($url));
-    }
-}
-
-sub _get02packages {
-    my $self = shift;
-    my $url = shift;
-    if($url !~ /^(file|https?):/) {
-        $url = ''.URI::file->new_abs($url);
-    }
-    $self->_get($url) || die(__PACKAGE__.": Couldn't fetch 02packages index file from $url\n");
 }
 
 # look through all the mirrors' 02packages for a module and return a
@@ -289,21 +275,6 @@ sub _yell {
             warn('WARNING: '.$msg);
         }
     }
-}
-
-# take a module, return a Parse::CPAN::Packages::Distribution
-sub _module2obj {
-    my $self = shift;
-    my $module = shift;
-    my $package = $self->_first_found($module);
-    return undef if(!$package);
-    return $package->distribution();
-}
-
-# FIXME make these memoise, maybe to disk
-sub _finddeps {
-    my $self = shift;
-    return @{$self->_finddeps_uncached(@_)};
 }
 
 sub _get {
@@ -330,7 +301,7 @@ sub _incore {
     return ($core && $core >= $args{version}) ? $core : undef;
 }
 
-sub _finddeps_uncached {
+sub _finddeps {
     my $self = shift;
     my %args = @_;
     my( $target, $depth, $version, $seen) = @args{qw(
@@ -338,7 +309,7 @@ sub _finddeps_uncached {
     )};
     $depth ||= 0;
 
-    return [] if(
+    return () if(
         $target eq 'perl' ||
         $self->_incore(
             module => $target,
@@ -346,14 +317,17 @@ sub _finddeps_uncached {
             version => $version)
     );
 
-    my $dist = $self->_module2obj($target);
+    my $dist = do {
+        my $package = $self->_first_found($target);
+        $package ? $package->distribution() : undef;
+    };
 
-    return [] unless(blessed($dist));
+    return () unless(blessed($dist));
 
     my $author   = $dist->cpanid();
     my $distname = $dist->distvname();
 
-    return [] if($seen->{$distname});
+    return () if($seen->{$distname});
     $seen->{$distname} = 1;
 
     my %reqs = $self->_getreqs(
@@ -367,7 +341,7 @@ sub _finddeps_uncached {
         %reqs = ();
     }
 
-    return [
+    return (
         CPAN::FindDependencies::Dependency->_new(
             depth        => $depth,
             distribution => $dist,
@@ -385,7 +359,7 @@ sub _finddeps_uncached {
                 version => $reqs{$_}
             );
         } sort keys %reqs) : ()
-    ];
+    );
 }
 
 sub _get_file_cached {
