@@ -6,7 +6,7 @@ use vars qw(@net_log $VERSION @ISA @EXPORT_OK);
 
 use Archive::Tar;
 use Archive::Zip;
-use File::Temp qw(tempdir);
+use File::Temp qw(tempfile);
 use File::Type;
 use LWP::UserAgent;
 use Module::CoreList;
@@ -362,23 +362,35 @@ sub _finddeps {
     );
 }
 
-sub _get_file_cached {
+# caching wrapper around _get
+#   can be asked to fetch a .meta, an archive, or a Makefile.PL,
+#   so it knows how to figure out what the cache filename is
+#   for those, based on the URL
+# can be asked to get whichever first succeeds of multiple options.
+# currently those are always a metadata file or an archive, which
+# will resolve to the same cache file.
+sub _get_cached {
     my $self = shift;
     my %args = @_;
-    my($src, $cachefile, $post_process) = @args{qw(src cachefile post_process)};
+    my($src, $post_process) = @args{qw(src post_process)};
     my $contents;
     # asked to check multiple sources? Return the first which has
     # content (or what's cached)
     if(ref($src)) {
         foreach my $this_url (@{$src}) {
-            last if($contents = $self->_get_file_cached(
-                %{ {
-                    @_,
-                    src => $this_url
-                } }
+            last if($contents = $self->_get_cached(
+                post_process => $post_process,
+                src          => $this_url
             ));
         }
         return $contents;
+    }
+
+    my $cachefile = $src;
+    if($cachefile =~ /Makefile.PL/) {
+        $cachefile =~ s{.*/([^/]+)/Makefile.PL$}{$1.MakefilePL};
+    } else {
+        $cachefile =~ s{.*/(.*?)\.(meta|zip|tar\.bz2|tar\.gz|tgz)$}{$1.yml};
     }
 
     if($self->{cachedir} && -d $self->{cachedir} && -r $self->{cachedir}."/$cachefile") {
@@ -409,7 +421,7 @@ sub _getreqs {
 
     my $meta_file;
     foreach my $source (@{$self->{mirrors}}) {
-        $meta_file = $self->_get_file_cached(
+        $meta_file = $self->_get_cached(
             src => [
                 $source->{mirror}."authors/id/".
                     substr($author, 0, 1).'/'.
@@ -421,7 +433,7 @@ sub _getreqs {
                     "$author/$distfile"
             ],
             post_process => sub {
-                # _get_file_cached normally just returns a file, but we're
+                # _get_cached normally just returns a file, but we're
                 # asking it to either fetch a metadata file or if that can't be
                 # found fetch an archive from which we want to extract a file,
                 # and then cache that extracted file's contents. This function
@@ -438,38 +450,35 @@ sub _getreqs {
                 # this but it doesn't work, for either zip or tar <shrug>
                 # # my $tar = Archive::Tar->new();
                 # # $tar->read([string opened as file])
-                # We write to $distname here, not $distfile. The filename
-                # doesn't actually matter once we've retrieved it, and
-                # $distfile may contain a directory part, eg like
-                # M/MU/MUIR/modules/Text-Tabs+Wrap-2013.0523.tar.gz
-                my $tempdir = tempdir('CPAN-FindDependencies-XXXXXXXX', TMPDIR => 1, CLEANUP => 1);
-                open(my $fh, '>', "$tempdir/$distname") || die("Can't write $tempdir/$distname: $!\n");
+                my($scopeguard, $tempfile) = tempfile('CPAN-FindDependencies-XXXXXXXX', UNLINK => 1, TMPDIR => 1);
+                open(my $fh, '>', "$tempfile") || die("Can't write $tempfile: $!\n");
                 binmode($fh); # Windows smells of wee
                 print $fh $file_data;
                 close($fh);
 
                 my $tar_extractor = sub {
                     my $tar = Archive::Tar->new(shift());
-                    if(my @members = grep { /$meta_file_re/ } $tar->list_files()) {
+                    # sort to ensure that we get JSON by preference, META.json
+                    # often contains more info
+                    if(my @members = sort { $a cmp $b } grep { /$meta_file_re/ } $tar->list_files()) {
                         $rval = $tar->get_content($members[0])
                     }
                 };
 
                 if(File::Type->mime_type($file_data) eq 'application/zip') {
-                    my $zip = Archive::Zip->new("$tempdir/$distname");
-                    if(my @members = $zip->membersMatching($meta_file_re)) {
+                    my $zip = Archive::Zip->new($tempfile);
+                    if(my @members = sort { $a cmp $b } $zip->membersMatching($meta_file_re)) {
                         $rval = $zip->contents($members[0])
                     }
                 } elsif(File::Type->mime_type($file_data) =~ m{^application/x-(gzip|tar)$}) {
-                    $tar_extractor->("$tempdir/$distname");
+                    $tar_extractor->($tempfile);
                 } elsif(File::Type->mime_type($file_data) eq 'application/x-bzip2') {
-                    open(my $fh, '-|', qw(bzip2 -dc), "$tempdir/$distname") ||
-                        $self->_yell("Can't unbzip2 $tempdir/$distname");
+                    open(my $fh, '-|', qw(bzip2 -dc), $tempfile) ||
+                        $self->_yell("Can't unbzip2 $tempfile: $!");
                     if($fh) { $tar_extractor->($fh); }
                 } else { $rval = $file_data; } # oh, it must have been a meta file
                 return $rval;
             },
-            cachefile => "$distname.yml",
         );
         last if($meta_file);
     }
@@ -498,9 +507,8 @@ sub _getreqs {
     if(!$self->{usemakefilepl}) {
         return ('-warning', 'no metadata');
     } else {
-        my $makefilepl = $self->_get_file_cached(
+        my $makefilepl = $self->_get_cached(
             src => "https://fastapi.metacpan.org/source/$author/$distname/Makefile.PL",
-            cachefile => "$distname.MakefilePL",
         );
         if($makefilepl) {
             my $result = getreqs_from_mm($makefilepl);
