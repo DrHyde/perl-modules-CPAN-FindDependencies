@@ -187,7 +187,7 @@ sub finddeps {
     @net_log = ();
     my($module, @args) = @_;
 
-    my $self = bless({ indices => [], mirrors => [] }, __PACKAGE__);
+    my $self = bless({ indices => [], mirrors => [], seen => {} }, __PACKAGE__);
 
     while(@args) {
         my $optname = shift(@args);
@@ -229,7 +229,6 @@ sub finddeps {
     my $first_found = $self->_first_found($module);
     return $self->_finddeps(
         module  => $module,
-        seen    => {},
         version => ($first_found ? $first_found->version() : 0)
     );
 }
@@ -305,9 +304,7 @@ sub _incore {
 sub _finddeps {
     my $self = shift;
     my %args = @_;
-    my( $module, $depth, $version, $seen) = @args{qw(
-        module depth version seen
-    )};
+    my( $module, $depth, $version) = @args{qw(module depth version)};
     $depth ||= 0;
 
     return () if(
@@ -328,8 +325,7 @@ sub _finddeps {
     my $author   = $dist->cpanid();
     my $distname = $dist->distvname();
 
-    return () if($seen->{$distname});
-    $seen->{$distname} = 1;
+    return () if($self->{seen}->{$distname}++);
 
     my %reqs = $self->_getreqs(
         author   => $author,
@@ -356,7 +352,6 @@ sub _finddeps {
             $self->_finddeps(
                 module  => $_,
                 depth   => $depth + 1,
-                seen    => $seen,
                 version => $reqs{$_}
             );
         } sort keys %reqs) : ()
