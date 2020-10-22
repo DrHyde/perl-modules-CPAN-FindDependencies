@@ -198,12 +198,14 @@ sub finddeps {
             my($mirror, $packages) = split(/,/, $optarg);
             $mirror = $default_mirror if($mirror eq 'DEFAULT');
             $mirror .= '/' unless($mirror =~ m{/$});
-            if($mirror !~ /^https?:\/\//) {
-                $mirror = ''.URI::file->new_abs($mirror);
-            }
+            $packages = "${mirror}modules/02packages.details.txt.gz"
+                unless($packages);
+            ($mirror, $packages) = map {
+                $_ =~ /^https?:\/\// ? $_ : ''.URI::file->new_abs($_);
+            } ($mirror, $packages);
             push @{$self->{mirrors}}, {
                 mirror   => $mirror,
-                packages => $packages ? $packages : "${mirror}modules/02packages.details.txt.gz"
+                packages => $packages
             };
         }
     }
@@ -242,7 +244,6 @@ sub _indices {
         local $SIG{__WARN__} = sub {};
         $self->{indices} = [map {
             my $url = $_->{packages};
-            if($url !~ /^(file|https?):/) { $url = ''.URI::file->new_abs($url); }
             if(!(exists($_parsed_index_cache{$url}) && $_parsed_index_cache{$url}->{expiry} > time())) {
                 $_parsed_index_cache{$url}->{expiry} = time() + 180;
                 $_parsed_index_cache{$url}->{index} = Parse::CPAN::Packages->new(
