@@ -24,7 +24,7 @@ $SIG{__WARN__} = sub {
 
 my @results = finddeps('Acme::Licence');
 ok(@results == 1 && $results[0]->name() eq 'Acme::Licence',
-   "Modules with no META.yml appear in the list of results");
+   "Modules with no metadata appear in the list of results");
 ok($caught eq "WARNING: CPAN::FindDependencies: DCANTRELL/Acme-Licence-1.0: no metadata\n",
    "... and generate a warning");
 like($CPAN::FindDependencies::net_log[0],

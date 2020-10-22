@@ -226,7 +226,7 @@ sub finddeps {
 
     my $first_found = $self->_first_found($module);
     return $self->_finddeps(
-        target  => $module,
+        module  => $module,
         seen    => {},
         version => ($first_found ? $first_found->version() : 0)
     );
@@ -304,21 +304,21 @@ sub _incore {
 sub _finddeps {
     my $self = shift;
     my %args = @_;
-    my( $target, $depth, $version, $seen) = @args{qw(
-        target depth version seen
+    my( $module, $depth, $version, $seen) = @args{qw(
+        module depth version seen
     )};
     $depth ||= 0;
 
     return () if(
-        $target eq 'perl' ||
+        $module eq 'perl' ||
         $self->_incore(
-            module => $target,
+            module => $module,
             perl => $self->{perl},
             version => $version)
     );
 
     my $dist = do {
-        my $package = $self->_first_found($target);
+        my $package = $self->_first_found($module);
         $package ? $package->distribution() : undef;
     };
 
@@ -345,7 +345,7 @@ sub _finddeps {
         CPAN::FindDependencies::Dependency->_new(
             depth        => $depth,
             distribution => $dist,
-            cpanmodule   => $target,
+            cpanmodule   => $module,
             indices      => [$self->_indices()],
             version      => $version || 0,
             ($warning ? (warning => $warning) : ())
@@ -353,7 +353,7 @@ sub _finddeps {
         ($depth != $self->{maxdepth}) ? (map {
             # print "Looking at $_\n";
             $self->_finddeps(
-                target  => $_,
+                module  => $_,
                 depth   => $depth + 1,
                 seen    => $seen,
                 version => $reqs{$_}
@@ -390,7 +390,7 @@ sub _get_cached {
     if($cachefile =~ /Makefile.PL/) {
         $cachefile =~ s{.*/([^/]+)/Makefile.PL$}{$1.MakefilePL};
     } else {
-        $cachefile =~ s{.*/(.*?)\.(meta|zip|tar\.bz2|tar\.gz|tgz)$}{$1.yml};
+        $cachefile =~ s{.*/(.*?)\.(meta|zip|tar\.bz2|tar\.gz|tgz)$}{$1.meta};
     }
 
     if($self->{cachedir} && -d $self->{cachedir} && -r $self->{cachedir}."/$cachefile") {
@@ -503,7 +503,7 @@ sub _getreqs {
         $self->_yell("$author/$distname: no metadata");
     }
     
-    # We could have failed to parse the META.yml, but we still want to try the Makefile.PL
+    # We could have failed to parse the metadata file, but we still want to try the Makefile.PL
     if(!$self->{usemakefilepl}) {
         return ('-warning', 'no metadata');
     } else {
