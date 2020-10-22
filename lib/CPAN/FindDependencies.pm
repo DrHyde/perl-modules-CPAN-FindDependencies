@@ -332,11 +332,6 @@ sub _finddeps {
         distname => $distname,
         distfile => $dist->filename(),
     );
-    my $warning = '';
-    if($reqs{'-warning'}) {
-        $warning = $reqs{'-warning'};
-        %reqs = ();
-    }
 
     return (
         CPAN::FindDependencies::Dependency->_new(
@@ -345,9 +340,9 @@ sub _finddeps {
             cpanmodule   => $module,
             indices      => [$self->_indices()],
             version      => $version || 0,
-            ($warning ? (warning => $warning) : ())
+            $reqs{'-warning'} ? (warning => $reqs{'-warning'}) : ()
         ),
-        ($depth != $self->{maxdepth}) ? (map {
+        (!exists($reqs{'-warning'}) && $depth != $self->{maxdepth}) ? (map {
             # print "Looking at $_\n";
             $self->_finddeps(
                 module  => $_,
