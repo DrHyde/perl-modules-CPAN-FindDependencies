@@ -56,8 +56,7 @@ note("Report (nothing should have changed)");
 eq_or_diff($stdout, '', "Nothing on STDOUT");
 eq_or_diff($stderr, '', "Nothing on STDERR");
 
-(my $v = $^V) =~ s/^v//;
-open(my $fh, '>', ".cpandeps-diff/$v/Brewery") || die("Can't fiddle with cached deps: $!\n");
+open(my $fh, '>', ".cpandeps-diff/5.30.3/Brewery") || die("Can't fiddle with cached deps: $!\n");
 print $fh join("\n",
     "F/FR/FRUITCO/Fruit-1.1.tar.gz",
     "P/PR/PROTEIN/Dead-Rat-94.tar.gz",
@@ -85,5 +84,29 @@ eq_or_diff($stderr, '', "Nothing on STDERR");
 note("List modules again");
 ($stdout, $stderr) = capture { system( @default_cmd, qw(list)) };
 eq_or_diff($stdout, "Brewery\n", "Got expected list");
+
+note("Now add a second mirror, and a module from it");
+($stdout, $stderr) = capture { system( @default_cmd, @mirror, qw(add CPAN::FindDependencies mirror DEFAULT)) };
+ok((stat(".cpandeps-diff/5.30.3/CPAN::FindDependencies"))[7] > 100,
+    "yay, we got that module's dependencies from the second mirror");
+eq_or_diff($stdout, '', "Nothing on STDOUT");
+eq_or_diff($stderr, '', "Nothing on STDERR");
+
+note("List modules again");
+($stdout, $stderr) = capture { system( @default_cmd, qw(list)) };
+eq_or_diff($stdout, join("\n", qw(Brewery CPAN::FindDependencies))."\n", "Got expected list");
+
+note("Change the deps of the module on the second mirror and report the change");
+open($fh, '>>', ".cpandeps-diff/5.30.3/CPAN::FindDependencies") || die("Can't fiddle with cached deps: $!\n");
+print $fh "\nthis isn't a real dep, LOL";
+close($fh);
+($stdout, $stderr) = capture { system( @default_cmd, @mirror, qw(mirror DEFAULT report CPAN::FindDependencies) ) };
+like($stdout, qr{\|this isn't a real dep, LOL\s+\*\s+\|\s+\|}, "Differences found");
+eq_or_diff($stderr, '', "Nothing on STDERR");
+
+my $prev_size = (stat(".cpandeps-diff/5.30.3/Brewery"))[7];
+($stdout, $stderr) = capture { system( @default_cmd, @mirror, qw(mirror DEFAULT report Brewery) ) };
+ok((stat(".cpandeps-diff/5.30.3/Brewery"))[7] != $prev_size,
+    "And a module with deps on both mirrors got spotted too");
 
 done_testing();

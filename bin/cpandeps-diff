@@ -24,9 +24,8 @@ if(@ARGV) {
         } elsif($arg eq 'mirror') {
             die("You must provide an argument to '$arg'.\n\n"._help())
                 unless(@ARGV);
-            die("You can't provide two or more mirrors.\n\n"._help())
-                if(exists($finddeps_args{mirror}));
-            $finddeps_args{mirror} = shift(@ARGV);
+            $finddeps_args{mirrors} ||= [];
+            push @{$finddeps_args{mirrors}}, shift(@ARGV);
         } elsif($arg eq 'perl') {
             die("You must provide an argument to '$arg'.\n\n"._help())
                 unless(@ARGV);
@@ -48,7 +47,7 @@ if(@ARGV) {
         }
     }
 }
-$finddeps_args{mirror} ||= 'DEFAULT';
+$finddeps_args{mirrors} ||= ['DEFAULT'];
 ($finddeps_args{perl}   ||= $^V) =~ s/^v//;
 
 # create the cache if needed
@@ -74,7 +73,7 @@ sub _get_deps {
         nowarnings => 1,
         perl       => $finddeps_args{perl},
         cachedir   => ".cpandeps-diff/$finddeps_args{perl}/cache",
-        mirror     => $finddeps_args{mirror},
+        map { (mirror => $_) } @{$finddeps_args{mirrors}}
     ));
 }
 
