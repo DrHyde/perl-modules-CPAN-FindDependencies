@@ -13,10 +13,12 @@ WriteMakefile(
   VERSION_FROM => 'lib/CPAN/FindDependencies.pm',
   EXE_FILES    => [qw(
     bin/cpandeps
+    bin/cpandeps-diff
   )],
   PREREQ_PM    => {
     'Archive::Tar'          => 0,
     'Archive::Zip'          => 0,
+    'File::Path'            => '2.17',
     'File::Type'            => 0,
     'Test::Differences'     => 0,
     'Test::More'            => 0.88, # done_testing

@@ -48,27 +48,7 @@ my($stdout, $stderr) = capture { system(
     )
 )};
 
-# filter out nonsense like
-#   Subroutine File::Slurp::O_RDWR redefined at .../File/Slurp.pm line 11.
-#   Subroutine File::Slurp::O_CREAT redefined at .../File/Slurp.pm line 11.
-#   Subroutine File::Slurp::O_EXCL redefined at .../File/Slurp.pm line 11.
-# from something in the dependency tree that only seems to affect 5.8, and
-#   v-string in use/require non-portable at .../File/Slurp.pm line 3
-# in 5.10.0
-
-$stderr = join("\n", grep {
-    $_ !~ /
-        ^
-        (
-            (
-                Subroutine.File::Slurp::O_(RDWR|CREAT|EXCL).redefined |
-                v-string.in.use\/require.non-portable
-            )
-            .*File\/Slurp.pm
-        ) |
-        Devel::Hide.*Test.Pod
-    /x
-} split(/[\r\n]+/, $stderr));
+$stderr = join("\n", grep { $_ !~ / ^ Devel::Hide.*Test.Pod /x } split(/[\r\n]+/, $stderr));
 
 eq_or_diff($stderr, '', "no errors reported");
 eq_or_diff($stdout, "*Tie::Scalar::Decay (dist: D/DC/DCANTRELL/Tie-Scalar-Decay-1.1.1.tar.gz)\n",

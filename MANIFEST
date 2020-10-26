@@ -28,7 +28,8 @@ t/makefilepl.t
 t/cache/Tie-Scalar-Decay-1.1.1/02packages.details.txt.gz
 t/cache/Tie-Scalar-Decay-1.1.1/Tie-Scalar-Decay-1.1.1.MakefilePL
 t/cache/Tie-Scalar-Decay-1.1.1/Time-HiRes-1.9719.meta
-t/script.t
+t/cpandeps-script.t
+t/cpandeps-diff-script.t
 t/recommended.t
 t/cache/CPAN-FindDependencies-1.1/HTML-Tagset-3.20.meta
 t/cache/CPAN-FindDependencies-1.1/HTML-Parser-3.60.meta
