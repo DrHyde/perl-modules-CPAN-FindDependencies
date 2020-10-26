@@ -6,6 +6,7 @@ use CPAN::FindDependencies qw(finddeps);
 use Test::More;
 use Test::Differences;
 
+use Devel::CheckOS;
 use Capture::Tiny qw(capture);
 use Config;
 use File::Path qw(remove_tree);
@@ -15,6 +16,10 @@ remove_tree('.cpandeps-diff');
 END {
     remove_tree('.cpandeps-diff') if(Test::More->builder()->is_passing());
 }
+
+SKIP: {
+    skip "Windows is just weird", 1
+        if(Devel::CheckOS::os_is('MicrosoftWindows'));
 
 my @default_cmd = (
     $Config{perlpath}, (map { "-I$_" } (@INC)),
@@ -108,5 +113,7 @@ my $prev_size = (stat(".cpandeps-diff/5.30.3/Brewery"))[7];
 ($stdout, $stderr) = capture { system( @default_cmd, @mirror, qw(mirror DEFAULT report Brewery) ) };
 ok((stat(".cpandeps-diff/5.30.3/Brewery"))[7] != $prev_size,
     "And a module with deps on both mirrors got spotted too");
+
+};
 
 done_testing();
