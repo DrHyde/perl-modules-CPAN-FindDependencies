@@ -452,7 +452,7 @@ sub _getreqs {
                     # sort to ensure that we get JSON by preference, META.json
                     # often contains more info
                     if(my @members = sort { $a cmp $b } grep { /$meta_file_re/ } $tar->list_files()) {
-                        $rval = $tar->get_content($members[0])
+                        return $tar->get_content($members[0])
                     }
                 };
 
@@ -462,11 +462,12 @@ sub _getreqs {
                         $rval = $zip->contents($members[0])
                     }
                 } elsif(File::Type->mime_type($file_data) =~ m{^application/x-(gzip|tar)$}) {
-                    $tar_extractor->($tempfile);
+                    $rval = $tar_extractor->($tempfile);
                 } elsif(File::Type->mime_type($file_data) eq 'application/x-bzip2') {
                     open(my $fh, '-|', qw(bzip2 -dc), $tempfile) ||
                         $self->_yell("Can't unbzip2 $tempfile: $!");
-                    if($fh) { $tar_extractor->($fh); }
+                    if($fh) { $rval = $tar_extractor->($fh); }
+                    close($fh);
                 } else { $rval = $file_data; } # oh, it must have been a meta file
                 return $rval;
             },
