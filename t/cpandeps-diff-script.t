@@ -12,6 +12,9 @@ use File::Path qw(remove_tree);
 
 $ENV{CPANDEPS_DIFF_DIR} = '.';
 remove_tree('.cpandeps-diff');
+END {
+    remove_tree('.cpandeps-diff') if(Test::More->builder()->is_passing());
+}
 
 my @default_cmd = (
     $Config{perlpath}, (map { "-I$_" } (@INC)),
