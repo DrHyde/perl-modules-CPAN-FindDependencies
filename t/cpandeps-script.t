@@ -6,7 +6,7 @@ use CPAN::FindDependencies qw(finddeps);
 
 use Test::More;
 use Test::Differences;
-plan tests => 5;
+plan tests => 6;
 
 use Devel::CheckOS;
 use Capture::Tiny qw(capture);
@@ -39,6 +39,15 @@ SKIP: {
         if(Devel::CheckOS::os_is('MicrosoftWindows'));
 
 my($stdout, $stderr) = capture { system(
+    $Config{perlpath}, (map { "-I$_" } (@INC)),
+    qw(
+        blib/script/cpandeps
+        help
+    )
+)};
+like($stdout, qr/cpandeps CPAN::FindDependencies perl 5.8.8/, "Can spew out some help");
+
+($stdout, $stderr) = capture { system(
     $Config{perlpath}, (map { "-I$_" } (@INC)),
     qw(
         blib/script/cpandeps

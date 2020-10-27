@@ -3,15 +3,22 @@
 use strict;
 use warnings;
 
+my $showversion;
+my $showhelp;
+while($ARGV[0] =~ /^-/) {
+    if($ARGV[0] eq '--showmoduleversions') {
+        $showversion = 1;
+        shift;
+    } elsif($ARGV[0] =~ /^(-h|--help)$/) {
+        $showhelp = 1;
+        shift;
+    }
+}
+if($showhelp || $ARGV[0] eq 'help') { exec('perldoc', $0); }
+
 eval "use CPAN::FindDependencies;";
 if($@) {
     die "Couldn't load CPAN::FindDependencies.\n";
-}
-
-my $showversion;
-if($ARGV[0] eq '--showmoduleversions') {
-  $showversion = 1;
-  shift;
 }
 
 my $target = shift;
@@ -87,7 +94,7 @@ L<http://deps.cpantesters.org/>
 
 =head1 AUTHOR, LICENCE and COPYRIGHT
 
-Copyright 2007 - 2009 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
+Copyright 2007 - 2020 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
 
 This software is free-as-in-speech software, and may be used,
 distributed, and modified under the terms of either the GNU
