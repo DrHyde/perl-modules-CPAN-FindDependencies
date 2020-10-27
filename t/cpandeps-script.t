@@ -6,7 +6,6 @@ use CPAN::FindDependencies qw(finddeps);
 
 use Test::More;
 use Test::Differences;
-plan tests => 6;
 
 use Devel::CheckOS;
 use Capture::Tiny qw(capture);
@@ -35,10 +34,13 @@ use Config;
 }
 
 SKIP: {
-    skip "Script works but tests don't on Windows.  Dunno why.", 5
+    skip "Script works but tests don't on Windows.  Dunno why.", 1
         if(Devel::CheckOS::os_is('MicrosoftWindows'));
+    my($stdout, $stderr) = capture { system( qw(perldoc foo) ) };
+    skip "Your perl is broken. $stderr", 1
+        if($stderr =~ /You need to install the perl-doc package to use this program/);
 
-my($stdout, $stderr) = capture { system(
+($stdout, $stderr) = capture { system(
     $Config{perlpath}, (map { "-I$_" } (@INC)),
     qw(
         blib/script/cpandeps
@@ -101,3 +103,5 @@ eq_or_diff($stdout, 'CPAN::FindDependencies (dist: D/DC/DCANTRELL/CPAN-FindDepen
 ', "got CPAN::FindDependencies right");
 
 };
+
+done_testing;

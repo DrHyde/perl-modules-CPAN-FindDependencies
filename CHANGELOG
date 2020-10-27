@@ -1,3 +1,5 @@
+3.01    2020-10-27      Patch for broken systems that don't have perldoc
+
 3.00    2020-10-27      configure_requires is now on by default (and can't be
                           switched off either);
                         Support multiple CPAN mirrors;
