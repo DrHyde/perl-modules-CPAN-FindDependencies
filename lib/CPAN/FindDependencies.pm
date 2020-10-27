@@ -21,7 +21,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '2.99_02';
+$VERSION = '3.00';
 
 use constant MAXINT => ~0;
 

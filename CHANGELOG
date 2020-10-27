@@ -1,4 +1,4 @@
-3.00    XXXXXXXXXX      configure_requires is now on by default (and can't be
+3.00    2020-10-27      configure_requires is now on by default (and can't be
                           switched off either);
                         Support multiple CPAN mirrors;
                         CPAN indices are only cached for three minutes instead

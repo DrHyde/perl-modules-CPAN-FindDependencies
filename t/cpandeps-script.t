@@ -35,7 +35,7 @@ use Config;
 }
 
 SKIP: {
-    skip "Script works but tests don't on Windows.  Dunno why.", 4
+    skip "Script works but tests don't on Windows.  Dunno why.", 5
         if(Devel::CheckOS::os_is('MicrosoftWindows'));
 
 my($stdout, $stderr) = capture { system(
