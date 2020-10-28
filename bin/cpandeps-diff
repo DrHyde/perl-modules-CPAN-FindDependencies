@@ -3,13 +3,14 @@
 use strict;
 use warnings;
 
+use Capture::Tiny qw(capture);
 use CPAN::FindDependencies;
 use File::Find::Rule::Age;
 use LWP::Simple;
 use Text::Diff;
 
 # generate help before chdir()ing
-_help();
+(my $help, undef) = capture { system(qw(perldoc -T), $0) };
 
 my($command, @command_params, %finddeps_args);
 if(@ARGV) {
@@ -131,13 +132,7 @@ sub _remove {
 
 sub _print_list { print "$_\n" foreach (_list()); }
 sub _print_help { print _help(); }
-{
-    my $help;
-    sub _help {
-        $help ||= `perldoc $0`;
-        return $help;
-    }
-}
+sub _help { return $help; }
 
 =head1 NAME
 

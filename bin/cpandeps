@@ -14,7 +14,7 @@ while($ARGV[0] =~ /^-/) {
         shift;
     }
 }
-if($showhelp || $ARGV[0] eq 'help') { exec('perldoc', $0); }
+if($showhelp || $ARGV[0] eq 'help') { exec(qw(perldoc -T), $0); }
 
 eval "use CPAN::FindDependencies;";
 if($@) {

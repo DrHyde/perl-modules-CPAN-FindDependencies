@@ -1,3 +1,6 @@
+3.02    2020-10-28      Patch to force perldoc to not use a pager when the
+                          scripts use it to show help
+
 3.01    2020-10-27      Patch for broken systems that don't have perldoc
 
 3.00    2020-10-27      configure_requires is now on by default (and can't be
