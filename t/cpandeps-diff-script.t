@@ -20,9 +20,6 @@ END {
 SKIP: {
     skip "Windows is just weird", 1
         if(Devel::CheckOS::os_is('MicrosoftWindows'));
-    my($stdout, $stderr) = capture { system( qw(perldoc foo) ) };
-    skip "Your perl is broken. $stderr", 1
-        if($stderr =~ /You need to install the perl-doc package to use this program/);
 
 my @default_cmd = (
     $Config{perlpath}, (map { "-I$_" } (@INC)),
@@ -32,7 +29,7 @@ my @default_cmd = (
 
 my @mirror = qw(mirror t/mirrors/privatemirror);
 
-($stdout, $stderr) = capture { system( @default_cmd, 'help') };
+my($stdout, $stderr) = capture { system( @default_cmd, 'help') };
 like($stdout, qr/cpandeps-diff add Some::Module/, "Can spew out some help");
 
 ($stdout, $stderr) = capture { system( @default_cmd, 'list') };

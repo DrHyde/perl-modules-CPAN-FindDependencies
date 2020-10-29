@@ -4,13 +4,16 @@ use strict;
 use warnings;
 
 use Capture::Tiny qw(capture);
+use Config;
 use CPAN::FindDependencies;
 use File::Find::Rule::Age;
 use LWP::Simple;
 use Text::Diff;
 
-# generate help before chdir()ing
-(my $help, undef) = capture { system(qw(perldoc -T), $0) };
+# generate help before chdir()ing. can't assume `perldoc` is in the path. Yuck.
+(my $help, undef) = capture { system(
+    $Config{perlpath}, qw{-MPod::Perldoc -e Pod::Perldoc->run() -- -T}, $0
+) };
 
 my($command, @command_params, %finddeps_args);
 if(@ARGV) {

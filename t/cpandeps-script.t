@@ -36,11 +36,8 @@ use Config;
 SKIP: {
     skip "Script works but tests don't on Windows.  Dunno why.", 1
         if(Devel::CheckOS::os_is('MicrosoftWindows'));
-    my($stdout, $stderr) = capture { system( qw(perldoc foo) ) };
-    skip "Your perl is broken. $stderr", 1
-        if($stderr =~ /You need to install the perl-doc package to use this program/);
 
-($stdout, $stderr) = capture { system(
+my($stdout, $stderr) = capture { system(
     $Config{perlpath}, (map { "-I$_" } (@INC)),
     qw(
         blib/script/cpandeps

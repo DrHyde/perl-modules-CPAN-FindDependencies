@@ -1,3 +1,6 @@
+3.03    2020-10-29      There are more exciting ways in which perldoc can be
+                          missing
+
 3.02    2020-10-28      Patch to force perldoc to not use a pager when the
                           scripts use it to show help
 
