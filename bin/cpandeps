@@ -6,15 +6,12 @@ use Config;
 
 my $showversion;
 my $showhelp;
-while($ARGV[0] =~ /^-/) {
-    if($ARGV[0] eq '--showmoduleversions') {
-        $showversion = 1;
-        shift;
-    } elsif($ARGV[0] =~ /^(-h|--help)$/) {
-        $showhelp = 1;
-        shift;
-    }
+if(grep { $_ eq '--showmoduleversions' } @ARGV) {
+    $showversion = 1;
+} elsif(grep { $_ =~ /^(-h|--help)$/ } @ARGV) {
+    $showhelp = 1;
 }
+
 # can't assume `perldoc` is in the path. Yuck.
 if($showhelp || $ARGV[0] eq 'help') { exec(
     $Config{perlpath}, qw{-MPod::Perldoc -e Pod::Perldoc->run() -- -T}, $0
@@ -29,7 +26,11 @@ my $target = shift;
 my @deps = CPAN::FindDependencies::finddeps(
     $target,
     nowarnings => 1,
-    @ARGV
+    map {
+        $_ =~ /^(--showmoduleversions|-h|--help)$/ ? () :
+        $_ =~ /^--/                                ? do { s/^--//; $_ } :
+                                                     $_
+    } @ARGV
 );
 
 foreach my $dep (@deps) {
@@ -52,14 +53,14 @@ This program is a simple wrapper around CPAN::FindDependencies.
 
     cpandeps CPAN::FindDependencies
 
-    cpandeps CPAN::FindDependencies perl 5.8.8 cachedir ../foo/bar
+    cpandeps CPAN::FindDependencies --perl 5.8.8 --cachedir ../foo/bar
 
-    cpandeps --showmoduleversions CPAN::FindDependencies
+    cpandeps CPAN::FindDependencies --showmoduleversions
 
 Given a module name, this program will show you the module's
 dependency tree.  It takes exactly the same arguments as the
 C<finddeps> function of CPAN::FindDependencies, with the exception
-that C<nowarnings> is turned *on* by default.
+that C<nowarnings> is turned *on* by default:
 
 =over
 
@@ -67,7 +68,7 @@ that C<nowarnings> is turned *on* by default.
 
 =back
 
-It also takes the following extra parameter, which must be the first one:
+It also takes the following extra parameter:
 
 =over
 

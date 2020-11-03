@@ -26,7 +26,6 @@ my @default_cmd = (
     'blib/script/cpandeps-diff',
     qw(perl 5.30.3)
 );
-
 my @mirror = qw(mirror t/mirrors/privatemirror);
 
 my($stdout, $stderr) = capture { system( @default_cmd, 'help') };
@@ -48,6 +47,14 @@ note("Same again");
 ($stdout, $stderr) = capture { system( @default_cmd, @mirror, qw(add Brewery)) };
 eq_or_diff($stdout, '', "Nothing on STDOUT");
 eq_or_diff($stderr, '', "Nothing on STDERR");
+
+note("Test that args can be --args");
+@default_cmd = (
+    $Config{perlpath}, (map { "-I$_" } (@INC)),
+    'blib/script/cpandeps-diff',
+    qw(--perl 5.30.3)
+);
+@mirror = qw(--mirror t/mirrors/privatemirror);
 
 note("Add another module");
 ($stdout, $stderr) = capture { system( @default_cmd, @mirror, qw(add Fruit)) };

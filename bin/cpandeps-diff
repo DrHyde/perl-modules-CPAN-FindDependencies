@@ -31,12 +31,12 @@ if(@ARGV) {
             die("You must provide an argument to '$arg'.\n\n"._help())
                 unless(@ARGV);
             ($this_command, @command_params) = (\&_report, shift(@ARGV));
-        } elsif($arg eq 'mirror') {
+        } elsif($arg =~ /^(--)?mirror$/) {
             die("You must provide an argument to '$arg'.\n\n"._help())
                 unless(@ARGV);
             $finddeps_args{mirrors} ||= [];
             push @{$finddeps_args{mirrors}}, shift(@ARGV);
-        } elsif($arg eq 'perl') {
+        } elsif($arg =~ /^(--)?perl$/) {
             die("You must provide an argument to '$arg'.\n\n"._help())
                 unless(@ARGV);
             die("You can't provide two or more versions of perl.\n\n"._help())
@@ -143,7 +143,7 @@ cpandeps-diff - generate reports when modules' dependencies get new releases
 
 =head1 SYNOPSIS
 
-    cpandeps-diff add Some::Module
+    cpandeps-diff add Some::Module --perl 5.30.3 --mirror file:///home/me/cpanmirror
 
     cpandeps-diff list
 
@@ -152,8 +152,7 @@ cpandeps-diff - generate reports when modules' dependencies get new releases
 =head1 COMMANDS
 
 cpandeps-diff takes at most one of several different commands, some of which in
-turn take more arguments. In the absence of any commands it will generate a
-report about all known modules:
+turn take more arguments:
 
 =head2 add $module [@args]
 
@@ -172,6 +171,11 @@ Show which modules we're going to report on
 =head2 report $module [@args]
 
 Generate a report for just this one module
+
+=head2 [@args]
+
+If you don't provide a command then it will generate a report about all known
+modules.
 
 =head2 help
 

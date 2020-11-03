@@ -44,7 +44,7 @@ my($stdout, $stderr) = capture { system(
         help
     )
 )};
-like($stdout, qr/cpandeps CPAN::FindDependencies perl 5.8.8/, "Can spew out some help");
+like($stdout, qr/cpandeps CPAN::FindDependencies --perl 5.8.8/, "Can spew out some help");
 
 ($stdout, $stderr) = capture { system(
     $Config{perlpath}, (map { "-I$_" } (@INC)),
@@ -55,9 +55,7 @@ like($stdout, qr/cpandeps CPAN::FindDependencies perl 5.8.8/, "Can spew out some
         cachedir t/cache/Tie-Scalar-Decay-1.1.1
     )
 )};
-
 $stderr = join("\n", grep { $_ !~ / ^ Devel::Hide.*Test.Pod /x } split(/[\r\n]+/, $stderr));
-
 eq_or_diff($stderr, '', "no errors reported");
 eq_or_diff($stdout, "*Tie::Scalar::Decay (dist: D/DC/DCANTRELL/Tie-Scalar-Decay-1.1.1.tar.gz)\n",
     "got Tie::Scalar::Decay right not using Makefile.PL");
@@ -66,16 +64,16 @@ eq_or_diff($stdout, "*Tie::Scalar::Decay (dist: D/DC/DCANTRELL/Tie-Scalar-Decay-
     $Config{perlpath}, (map { "-I$_" } (@INC)),
     qw(
         blib/script/cpandeps
-        --showmoduleversions
         Tie::Scalar::Decay
-        mirror DEFAULT,t/cache/Tie-Scalar-Decay-1.1.1/02packages.details.txt.gz
+        --mirror DEFAULT,t/cache/Tie-Scalar-Decay-1.1.1/02packages.details.txt.gz
         cachedir t/cache/Tie-Scalar-Decay-1.1.1
+        --showmoduleversions
         usemakefilepl 1
     )
 )};
 eq_or_diff($stdout, 'Tie::Scalar::Decay (dist: D/DC/DCANTRELL/Tie-Scalar-Decay-1.1.1.tar.gz)
   Time::HiRes (dist: J/JH/JHI/Time-HiRes-1.9719.tar.gz, mod ver: 1.2)
-', "got Tie::Scalar::Decay right using Makefile.PL and --showmoduleversions");
+', "got Tie::Scalar::Decay right using Makefile.PL and --showmoduleversions (and cope with other --args too)");
 
 ($stdout, $stderr) = capture { system(
     $Config{perlpath}, (map { "-I$_" } (@INC)),
