@@ -12,7 +12,8 @@ jobs:
         shell: perl {0}
         run: |
           use Actions::Core;
-          set_output(matrix => {perl => [grep { $_ !~ /^5.8/ } perl_versions()]});
+          # 5.8 is too old, 5.20 can't build Sub::Name in the Github environment for some reason
+          set_output(matrix => {perl => [grep { $_ !~ /^5.(8|20)/ } perl_versions()]});
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
 
