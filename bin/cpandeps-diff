@@ -6,7 +6,7 @@ use warnings;
 use Capture::Tiny qw(capture);
 use Config;
 use CPAN::FindDependencies;
-use File::Find::Rule::Age;
+use File::Find::Rule;
 use LWP::Simple;
 use Text::Diff;
 
@@ -68,7 +68,7 @@ mkdir(".cpandeps-diff/$finddeps_args{perl}/cache");
 # clear out Ye Olde cache files. Max age is 23h so multiple runs within a
 # day won't hammer servers, but a daily cron job will always be fresh
 unlink(
-    File::Find::Rule->file()->age(older => '23h')
+    File::Find::Rule->file()->mtime("<=".(time() - 23*60*60))
         ->in(".cpandeps-diff/$finddeps_args{perl}/cache")
 );
 

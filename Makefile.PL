@@ -21,7 +21,7 @@ WriteMakefile(
     'Capture::Tiny'         => 0.05,
     'CPAN::Meta'            => 0,
     'Devel::CheckOS'        => 1.52,
-    'File::Find::Rule::Age' => 0,
+    'File::Find::Rule'      => 0,
     'File::Path'            => '2.17',
     'File::Temp'            => 0.19,
     'File::Type'            => 0,
