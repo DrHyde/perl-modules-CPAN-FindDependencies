@@ -5,6 +5,7 @@ task:
   test_script:
     - pkg install -y perl5
     - echo|cpan App::cpanminus
+    - cpanm --notest IO::Socket::SSL
     - cpanm --installdeps .
     - perl Makefile.PL
     - make
