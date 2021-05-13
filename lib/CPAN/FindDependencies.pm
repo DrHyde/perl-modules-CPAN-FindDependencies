@@ -286,8 +286,10 @@ sub _get {
     push @net_log, $url;
     my $response = $ua->get($url);
     if($response->is_success()) {
+        print STDERR "  _get $url succeeded\n";
         return $response->content();
     } else {
+        print STDERR "  _get $url failed: ".$response->content()."\n";
         return undef;
     }
 }
