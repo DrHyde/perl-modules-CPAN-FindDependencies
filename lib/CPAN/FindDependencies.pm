@@ -277,6 +277,7 @@ sub _yell {
     }
 }
 
+my $counter = 0;
 sub _get {
     my $self = shift;
     my $url = shift;
@@ -286,10 +287,10 @@ sub _get {
     push @net_log, $url;
     my $response = $ua->get($url);
     if($response->is_success()) {
-        print STDERR "  _get $url succeeded\n";
+        print STDERR ++$counter . "  _get $url succeeded\n";
         return $response->content();
     } else {
-        print STDERR "  _get $url failed: ".$response->content()."\n";
+        print STDERR ++$counter . "  _get $url failed: ".$response->content()."\n";
         return undef;
     }
 }
