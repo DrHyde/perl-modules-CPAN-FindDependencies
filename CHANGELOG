@@ -1,4 +1,6 @@
-3.06    2021-06-29      Add documentation about tree pruning
+3.06    2021-06-29
+
+- Add documentation about tree pruning
 
 3.05    2021-02-23      Skip tests that rely on bzip2 when it's not available
 
