@@ -21,7 +21,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '3.05';
+$VERSION = '3.06';
 
 use constant MAXINT => ~0;
 
@@ -104,6 +104,8 @@ by paying attention to the depth of each object.
 
 The ordering of any particular module's immediate 'children' can be
 assumed to be random - it's actually hash key order.
+
+#include shared/tree-pruning
 
 =head1 SECURITY
 

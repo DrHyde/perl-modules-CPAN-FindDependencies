@@ -84,6 +84,8 @@ is indicated with an asterisk before the module's name.
 
 #include shared/incompatible
 
+#include shared/tree-pruning
+
 =head1 WARNINGS, BUGS and FEEDBACK
 
 This script has not been thoroughly tested.
