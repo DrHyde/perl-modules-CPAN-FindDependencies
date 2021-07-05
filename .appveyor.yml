@@ -1,15 +1,18 @@
-cache:
-  - C:\strawberry
+environment:
+  matrix:
+    - PERLVER: 
+    - PERLVER: --version=5.20.3.3
 
 install:
-  - if not exist "C:\strawberry" choco install strawberryperl -y
+  - if not exist "C:\strawberry" choco install strawberryperl %PERLVER% -y
   - set PATH=C:\strawberry\c\bin;C:\strawberry\perl\site\bin;C:\strawberry\perl\bin;%PATH%
   - cd %APPVEYOR_BUILD_FOLDER%
   - cpanm --quiet --installdeps --with-develop --notest .
+  - cpanm --quiet --notest ExtUtils::MakeMaker
 
 build_script:
   - perl Makefile.PL
-  - gmake
+  - if "%PERLVER%"=="" (gmake) else (dmake)
 
 test_script:
-  - gmake test
+  - if "%PERLVER%"=="" (gmake test TEST_VERBOSE=1) else (dmake test TEST_VERBOSE=1)
