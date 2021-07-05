@@ -42,7 +42,9 @@ SKIP: {
     {
         no warnings qw(exec);
         skip "bzip2 required for these tests", 4 unless(
-            open(my $bzipfh, '-|', qw(bzip2 -tq t/mirrors/privatemirror/authors/id/F/FR/FRUITCO/Fruit-1.0.tar.bz2))
+            # can't use list form of pipe open because it's broken
+            # on Windows perl < 5.22
+            open(my $bzipfh, 'bzip2 -tq t/mirrors/privatemirror/authors/id/F/FR/FRUITCO/Fruit-1.0.tar.bz2 |')
         );
     }
     multi_repo_find();

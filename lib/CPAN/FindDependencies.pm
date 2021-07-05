@@ -21,7 +21,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '3.06';
+$VERSION = '3.07';
 
 use constant MAXINT => ~0;
 
@@ -467,7 +467,9 @@ sub _getreqs {
                     $rval = $tar_extractor->($tempfile);
                 } elsif(File::Type->mime_type($file_data) eq 'application/x-bzip2') {
                     no warnings qw(exec);
-                    if(open(my $fh, '-|', qw(bzip2 -dc), $tempfile)) {
+                    # can't use list form of pipe open because it's broken
+                    # on Windows perl < 5.22. See https://github.com/perl/perl5/issues/13574
+                    if(open(my $fh, "bzip2 -dc $tempfile |")) {
                         $rval = $tar_extractor->($fh);
                     } else {
                         $self->_yell("Can't unbzip2 $tempfile: $!");
