@@ -1,4 +1,4 @@
-3.07    XXXX-XX-XX
+3.07    2021-07-05
 
 - Work around bug in perl 5.20 and below on Windows when dealing with bzipped archives
 
