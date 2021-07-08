@@ -1,13 +1,13 @@
 environment:
   matrix:
     - PERLVER: 
-      BZIP2: no
+      WITHBZIP2: no
     - PERLVER: 
-      BZIP2: yes
+      WITHBZIP2: yes
     - PERLVER: --version=5.20.3.3
-      BZIP2: no
+      WITHBZIP2: no
     - PERLVER: --version=5.20.3.3
-      BZIP2: yes
+      WITHBZIP2: yes
 
 install:
   - if not exist "C:\strawberry" choco install strawberryperl %PERLVER% -y
@@ -18,7 +18,7 @@ install:
 
 build_script:
   - perl Makefile.PL
-  - if "%BZIP2%"=="no" (del "C:\Program Files\Git\usr\bin\bzip2.EXE")
+  - if "%WITHBZIP2%"=="no" (del "C:\Program Files\Git\usr\bin\bzip2.EXE")
   - if "%PERLVER%"=="" (gmake) else (dmake)
 
 test_script:
