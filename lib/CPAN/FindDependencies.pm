@@ -6,6 +6,7 @@ use vars qw(@net_log $VERSION @ISA @EXPORT_OK);
 
 use Archive::Tar;
 use Archive::Zip;
+use Env::Path;
 use File::Temp qw(tempfile);
 use File::Type;
 use LWP::UserAgent;
@@ -469,7 +470,10 @@ sub _getreqs {
                     no warnings qw(exec);
                     # can't use list form of pipe open because it's broken
                     # on Windows perl < 5.22. See https://github.com/perl/perl5/issues/13574
-                    if(open(my $fh, "bzip2 -dc $tempfile |")) {
+                    # and can't rely on open() to return false if bzip2 doesn't exist
+                    # on Windows either, hence finding the binary the hard way first
+                    if((my $bzip2exe) = Env::Path->PATH->Whence('bzip2')) {
+                        open(my $fh, "$bzip2exe -dc $tempfile |");
                         $rval = $tar_extractor->($fh);
                     } else {
                         $self->_yell("Can't unbzip2 $tempfile: $!");
