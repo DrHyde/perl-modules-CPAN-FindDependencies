@@ -20,6 +20,7 @@ task:
     - /Users/admin/perl5/bin/cpanm TAP::Harness::Env
     - /Users/admin/perl5/bin/cpanm --installdeps .
     - export PERL5LIB=/Users/admin/perl5/lib/perl5
+    - export AUTHOR_TESTING=1
     - perl Makefile.PL
     - make
     - make test
