@@ -65,6 +65,8 @@ named parameters:
 
 =back
 
+Order of arguments is not important.
+
 It returns a list of CPAN::FindDependencies::Dependency objects, whose
 useful methods are:
 
@@ -185,20 +187,30 @@ This module is also free-as-in-mason software.
 =cut
 
 my $default_mirror = 'https://cpan.metacpan.org/';
+my @valid_params = qw(
+    nowarnings
+    fatalerrors
+    perl
+    cachedir
+    maxdepth
+    mirror
+    usemakefilepl
+    recommended
+    suggested
+);
 
 sub finddeps {
     @net_log = ();
-    my($module, @args) = @_;
+    my $module = '';
+    my @args = @_;
 
     my $self = bless({ indices => [], mirrors => [], seen => {} }, __PACKAGE__);
 
     while(@args) {
-        my $optname = shift(@args);
-        my $optarg  = shift(@args);
-        if($optname ne 'mirror' ) {
-            $self->{$optname} = $optarg
-        } else {
-            my($mirror, $packages) = split(/,/, $optarg);
+        my $option = shift(@args);
+        # print STDERR "found argument $option. Remaining args [".join(', ', @args)."]\n";
+        if($option eq 'mirror') {
+            my($mirror, $packages) = split(/,/, shift(@args));
             $mirror = $default_mirror if($mirror eq 'DEFAULT');
             $mirror .= '/' unless($mirror =~ m{/$});
             $packages = "${mirror}modules/02packages.details.txt.gz"
@@ -210,6 +222,12 @@ sub finddeps {
                 mirror   => $mirror,
                 packages => $packages
             };
+        } elsif(grep { $_ eq $option } @valid_params) {
+            $self->{$option} = shift(@args);
+        } elsif(!$module) {
+            $module = $option
+        } else {
+            die("Can't look for dependencies for '$option', already looking for deps for '$module'\n");
         }
     }
     unless(@{$self->{mirrors}}) {
