@@ -474,7 +474,12 @@ sub _getreqs {
         last if($meta_file);
     }
     if ($meta_file) {
-        my $meta_data = eval { CPAN::Meta->load_string($meta_file); };
+        my $meta_data = do {
+            local $SIG{__WARN__} = sub {
+                warn join("\n", "In $distfile, $_[0]", @_[1 .. $#_]);
+            };
+            eval { CPAN::Meta->load_string($meta_file); };
+        };
         if ($@ || !defined($meta_data)) {
             $self->_yell("$author/$distname: failed to parse metadata")
         } else {
