@@ -44,7 +44,8 @@ my($stdout, $stderr) = capture { system(
         help
     )
 )};
-is($stderr, '', "... no whining on STDERR");
+$stderr =~ s/stty: stdin isn't a terminal\s//;
+is($stderr, '', "... no unexpected whining on STDERR");
 like($stdout, qr/cpandeps.*perl.*5.8.8.*CPAN::FindDependencies/, "Can spew out some help");
 
 ($stdout, $stderr) = capture { system(

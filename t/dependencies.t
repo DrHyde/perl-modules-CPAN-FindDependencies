@@ -2,8 +2,15 @@ use strict;
 use warnings;
 
 use Test::More;
+use Test::Exception;
+
+use Capture::Tiny qw(capture);
 
 use CPAN::FindDependencies 'finddeps';
+
+throws_ok { finddeps(qw(CPAN::FindDependencies I::Like::Pickles)) }
+    qr/already looking for deps for 'CPAN::FindDependencies/,
+    "exception thrown when told to look for deps for two modules at once";
 
 is_deeply(
     [
@@ -31,6 +38,20 @@ is_deeply(
     ],
     "Dependencies calculated OK with default perl and no maxdepth"
 );
+
+# CPAN::Meta::YAML seems to only yell on 5.24 and higher
+if($] >= 5.024) {
+    my($stdout, $stderr) = capture {
+        finddeps(
+            'CPAN::FindDependencies',
+            'mirror' => 'DEFAULT,t/cache/CPAN-FindDependencies-1.1-no_index-twice/02packages.details.txt.gz',
+            cachedir     => 't/cache/CPAN-FindDependencies-1.1-no_index-twice',
+            nowarnings   => 1,
+            perl         => 5.008008
+        );
+    };
+    like $stderr, qr/In CPAN-FindDependencies-1.1.tar.gz/, "... we warn appropriately on dodgy metadata";
+}
 
 is_deeply(
     {
