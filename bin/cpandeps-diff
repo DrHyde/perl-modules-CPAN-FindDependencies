@@ -7,7 +7,6 @@ use Capture::Tiny qw(capture);
 use Config;
 use CPAN::FindDependencies;
 use File::Find::Rule;
-use LWP::Simple;
 use Text::Diff;
 
 # generate help before chdir()ing. can't assume `perldoc` is in the path. Yuck.
