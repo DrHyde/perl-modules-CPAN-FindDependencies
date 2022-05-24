@@ -22,6 +22,7 @@ WriteMakefile(
     'CPAN::Meta'              => 0,
     'Env::Path'               => 0.19,
     'Devel::CheckOS'          => 1.52,
+    'Devel::Hide'             => 0,
     'File::Find::Rule'        => 0,
     'File::Path'              => '2.17',
     'File::Temp'              => 0.19,

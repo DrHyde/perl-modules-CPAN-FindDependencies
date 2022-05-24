@@ -1,3 +1,7 @@
+X.XX    XXXX-XX-XX
+
+- If LWP can't talk https, try shelling out to wget instead
+
 3.12    2022-04-12
 
 - Fix a minor bug in the tests that caused failures when nothing was actually wrong

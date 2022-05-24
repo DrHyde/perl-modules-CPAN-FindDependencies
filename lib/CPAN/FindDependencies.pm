@@ -26,6 +26,8 @@ $VERSION = '3.12';
 
 use constant MAXINT => ~0;
 
+eval 'use LWP::Protocol::https';
+
 =head1 NAME
 
 CPAN::FindDependencies - find dependencies for modules on the CPAN
@@ -301,15 +303,26 @@ sub _yell {
 sub _get {
     my $self = shift;
     my $url = shift;
-    my $ua = LWP::UserAgent->new();
-    $ua->env_proxy();
-    $ua->agent(__PACKAGE__."/$VERSION");
+
     push @net_log, $url;
-    my $response = $ua->get($url);
-    if($response->is_success()) {
-        return $response->content();
-    } else {
+
+    if($LWP::Protocol::https::VERSION || $url !~ /^https:/) {
+        my $ua = LWP::UserAgent->new();
+        $ua->env_proxy();
+        $ua->agent(__PACKAGE__."/$VERSION");
+        my $response = $ua->get($url);
+        if($response->is_success()) {
+            return $response->content();
+        }
         return undef;
+    } elsif((my $wget) = grep { -x "$_/wget" } Env::Path->PATH->List) {
+        open(my $wget_fh, '-|', 'wget', '--no-check-certificate', '-qO', '-', $url) || do {
+            warn("Couldn't wget: $!\n");
+            return undef;
+        };
+        return join('', <$wget_fh>);
+    } else {
+        die("Ohnoes! No LWP::Protocol::https and couldn't wget either.\n");
     }
 }
 

@@ -14,4 +14,4 @@ jobs:
         run: |
           cpanm --installdeps .
           cpanm Devel::Cover::Report::Coveralls
-          cover -test -report Coveralls
+          AUTHOR_TESTING=1 cover -test -report Coveralls
