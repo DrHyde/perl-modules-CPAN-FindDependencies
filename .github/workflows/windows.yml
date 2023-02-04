@@ -34,5 +34,5 @@ jobs:
       - name: Run Tests
         run: |
           perl Makefile.PL
-          make test TEST_VERBOSE=1
+          if( "${{ matrix.perl-version }}" -lt "5.26" ) { dmake test TEST_VERBOSE=1 } else { gmake test TEST_VERBOSE=1 }
 
