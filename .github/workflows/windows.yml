@@ -1,0 +1,36 @@
+# cribbed from https://stackoverflow.com/questions/72367353/testing-perl-on-windows-with-github-actions
+
+on: [push, pull_request]
+name: Windows
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        perl-version:
+          - '5.20'
+          - 'latest'
+        withbzip2:
+          - 'yes'
+          - 'no'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up perl
+        uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: ${{ matrix.perl-version }}
+          distribution: strawberry
+      - name: perl -V
+        run: perl -V
+      - name: Install Dependencies
+        run: |
+          cpanm ExtUtils::MakeMaker Test::Pod Test::Pod::Coverage || cat $HOME/.cpanm/work/*/build.log
+          cpanm --installdeps . || cat $HOME/.cpanm/work/*/build.log
+      - name: Run Tests
+        run: |
+          perl Makefile.PL
+          if("${{ matrix.withbzip2 }}" -eq "no") { del "C:\Program Files\Git\usr\bin\bzip2.EXE" }
+          if("${{ matrix.perl-version }}" -eq "5.20") { dmake test TEST_VERBOSE=1 } else { gmake test TEST_VERBOSE=1 }
+
