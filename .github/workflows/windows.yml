@@ -11,10 +11,14 @@ jobs:
       matrix:
         perl-version:
           - '5.20'
+          - '5.22'
+          - '5.24'
+          - '5.26'
+          - '5.28'
+          - '5.30'
+          - '5.32'
+          - '5.34'
           - 'latest'
-        withbzip2:
-          - 'yes'
-          - 'no'
     steps:
       - uses: actions/checkout@v2
       - name: Set up perl
@@ -31,6 +35,5 @@ jobs:
       - name: Run Tests
         run: |
           perl Makefile.PL
-          if("${{ matrix.withbzip2 }}" -eq "no") { del "C:\Program Files\Git\usr\bin\bzip2.EXE" }
-          if("${{ matrix.perl-version }}" -eq "5.20") { dmake test TEST_VERBOSE=1 } else { gmake test TEST_VERBOSE=1 }
+          make test TEST_VERBOSE=1
 
