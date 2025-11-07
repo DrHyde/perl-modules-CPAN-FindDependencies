@@ -73,7 +73,10 @@ eq_or_diff($stdout, "*Tie::Scalar::Decay (dist: D/DC/DCANTRELL/Tie-Scalar-Decay-
         usemakefilepl 1
     )
 )};
-is($stderr, '', "... no whining on STDERR");
+ok(
+    ($stderr eq '' || $stderr =~ /^Devel::Cover: Deleting old coverage/),
+    "... no whining on STDERR"
+);
 eq_or_diff($stdout, 'Tie::Scalar::Decay (dist: D/DC/DCANTRELL/Tie-Scalar-Decay-1.1.1.tar.gz)
   Time::HiRes (dist: J/JH/JHI/Time-HiRes-1.9719.tar.gz, mod ver: 1.2)
 ', "got Tie::Scalar::Decay right using Makefile.PL and --showmoduleversions (and cope with other --args too)");
@@ -91,7 +94,10 @@ eq_or_diff($stdout, 'Tie::Scalar::Decay (dist: D/DC/DCANTRELL/Tie-Scalar-Decay-1
         Tie::Scalar::Decay
     )
 )};
-is($stderr, '', "... no whining on STDERR");
+ok(
+    ($stderr eq '' || $stderr =~ /^Devel::Cover: Deleting old coverage/),
+    "... no whining on STDERR"
+);
 eq_or_diff($stdout, 'Tie::Scalar::Decay (dist: D/DC/DCANTRELL/Tie-Scalar-Decay-1.1.1.tar.gz)
   Time::HiRes (dist: J/JH/JHI/Time-HiRes-1.9719.tar.gz, mod ver: 1.2)
 ', "same again, but with args in different order");
