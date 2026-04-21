@@ -116,5 +116,6 @@ jobs:
             gtar -C dist-for-test -xzf *.tar.gz &&
             cd dist-for-test/* &&
             cpan App::cpanminus &&
+            /home/runner/perl5/bin/cpanm --notest Net::SSLeay &&
             /home/runner/perl5/bin/cpanm --installdeps . &&
             /home/runner/perl5/bin/cpanm -v .
