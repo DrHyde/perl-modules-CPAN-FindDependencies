@@ -1,3 +1,5 @@
+# Auto-generated file, see workflow-templates/install-various-OSes.yml
+
 on: [push, pull_request]
 name: Install on various OSes
 jobs:
@@ -114,6 +116,5 @@ jobs:
             gtar -C dist-for-test -xzf *.tar.gz &&
             cd dist-for-test/* &&
             cpan App::cpanminus &&
-            /home/runner/perl5/bin/cpanm --notest Net::SSLeay &&
             /home/runner/perl5/bin/cpanm --installdeps . &&
             /home/runner/perl5/bin/cpanm -v .
