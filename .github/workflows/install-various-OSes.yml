@@ -1,6 +1,10 @@
 # Auto-generated file, see workflow-templates/install-various-OSes.yml
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - '.github/workflows/install-various-OSes.yml'
+      - '.github/workflows/run-install-various-OSes'
 name: Install on various OSes
 jobs:
   build:
@@ -13,7 +17,7 @@ jobs:
         run: |
           cpanm --installdeps .
           perl Makefile.PL
-          make test
+          make test TEST_VERBOSE=1
           make dist
       - uses: actions/upload-artifact@v7
         with:
