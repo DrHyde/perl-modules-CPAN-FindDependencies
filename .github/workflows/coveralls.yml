@@ -23,4 +23,4 @@ jobs:
           cpanm ExtUtils::MakeMaker Test::Pod Test::Pod::Coverage
           perl -Mparent -e0 || cpanm parent
           cpanm --installdeps .
-          AUTHOR_TESTING=1 cover -test -report Coveralls
+          AUTHOR_TESTING=1 cover -ignore Makefile.PL -test -report Coveralls
