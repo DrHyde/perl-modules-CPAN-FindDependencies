@@ -7,6 +7,7 @@ use vars qw(@net_log $VERSION @ISA @EXPORT_OK);
 use Archive::Tar;
 use Archive::Zip;
 use Env::Path;
+use Path::Tiny;
 use File::Temp qw(tempfile);
 use File::Type;
 use LWP::UserAgent;
@@ -22,7 +23,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '3.13';
+$VERSION = '3.14';
 
 use constant MAXINT => ~0;
 
@@ -226,6 +227,12 @@ sub finddeps {
             };
         } elsif(grep { $_ eq $option } @valid_params) {
             $self->{$option} = shift(@args);
+            if($option eq 'cachedir' && !(-d $self->{$option} && -r $self->{$option} && -w $self->{$option}) ) {
+                # bad cachedir, try to create
+                eval { path($self->{$option})->mkdir(); };
+                die("Bad cachedir: $self->{$option}\n")
+                    unless(-d $self->{$option} && -r $self->{$option} && -w $self->{$option});
+            }
         } elsif(!$module) {
             $module = $option
         } else {
