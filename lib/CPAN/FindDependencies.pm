@@ -6,11 +6,10 @@ use vars qw(@net_log $VERSION @ISA @EXPORT_OK);
 
 use Archive::Tar;
 use Archive::Zip;
-use Env::Path;
 use Path::Tiny;
 use File::Temp qw(tempfile);
 use File::Type;
-use LWP::UserAgent;
+use HTTP::Tiny;
 use Module::CoreList;
 use Scalar::Util qw(blessed);
 use CPAN::Meta;
@@ -23,11 +22,9 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(finddeps);
 
-$VERSION = '3.14';
+$VERSION = '4.00';
 
 use constant MAXINT => ~0;
-
-eval 'use LWP::Protocol::https';
 
 =head1 NAME
 
@@ -313,23 +310,18 @@ sub _get {
 
     push @net_log, $url;
 
-    if($LWP::Protocol::https::VERSION || $url !~ /^https:/) {
-        my $ua = LWP::UserAgent->new();
-        $ua->env_proxy();
-        $ua->agent(__PACKAGE__."/$VERSION");
-        my $response = $ua->get($url);
-        if($response->is_success()) {
-            return $response->content();
-        }
-        return undef;
-    } elsif((my $wget) = grep { -x "$_/wget" } Env::Path->PATH->List) {
-        open(my $wget_fh, '-|', 'wget', '--no-check-certificate', '-qO', '-', $url) || do {
-            warn("Couldn't wget: $!\n");
-            return undef;
-        };
-        return join('', <$wget_fh>);
+    if($url =~ m{^file://}) {
+        $url =~ s{^file://}{};
+        open(my $fh, '<', $url) || return undef;
+        return join('', <$fh>);
     } else {
-        die("Ohnoes! No LWP::Protocol::https and couldn't wget either.\n");
+        my $response = HTTP::Tiny->new(
+            # allow_credentialed_redirects => 1,
+            # allow_downgrade              => 1,
+            agent => __PACKAGE__."/$VERSION",
+        )->get($url);
+        return $response->{content} if($response->{success});
+        return undef;
     }
 }
 
