@@ -312,6 +312,7 @@ sub _get {
 
     if($url =~ m{^file://}) {
         $url =~ s{^file://}{};
+        $url =~ s{^/([A-Z]:)}{$1};
         open(my $fh, '<', $url) || return undef;
         return join('', <$fh>);
     } else {
