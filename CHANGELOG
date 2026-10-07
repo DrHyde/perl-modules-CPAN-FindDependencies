@@ -1,4 +1,4 @@
-4.00    XXXX-XX-XX
+4.00    2026-10-07
 
 - Use HTTP::Tiny instead of LWP;
 - Don't try to cope if SSL isn't available. A machine without working SSL is broken
